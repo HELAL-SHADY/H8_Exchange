@@ -1,0 +1,266 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  password  String
+  role      Role     @default(USER)
+  
+  // User profile
+  binanceUid  String?
+  walletNumber String?
+  profileImage String?
+  
+  // Relationships
+  orders      Order[]
+  reviews     Review[]
+  notifications Notification[]
+  auditLogs   AuditLog[]
+  
+  // Metadata
+  isVerified  Boolean @default(false)
+  isBanned    Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Order details
+  type      OrderType @default(BUY)
+  amount    Float
+  status    OrderStatus @default(PENDING_REVIEW)
+  
+  // User information
+  fullName  String
+  phone     String
+  binanceUid String
+  walletNumber String
+  
+  // Proof and verification
+  proofImageUrl String?
+  proofImageId  String?
+  
+  // Admin notes
+  adminNote String?
+  approvedBy String?
+  approvedAt DateTime?
+  rejectedAt DateTime?
+  completedAt DateTime?
+  
+  // Relationships
+  reviews   Review[]
+  notifications Notification[]
+  auditLogs AuditLog[]
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  // Review content
+  rating    Int      @default(5)
+  comment   String?
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, orderId])
+  @@index([orderId])
+  @@map("reviews")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  
+  // Notification details
+  type      NotificationType
+  title     String
+  message   String
+  actionUrl String?
+  
+  // Status
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  
+  // Metadata
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  
+  // Action details
+  actionType ActionType
+  actionDescription String
+  
+  // Metadata
+  ipAddress String?
+  deviceInfo String?
+  userAgent String?
+  
+  // Timestamp
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([actionType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model ExchangeRate {
+  id        String   @id @default(cuid())
+  
+  // Current rates
+  buyRate   Float    @default(51.0)
+  sellRate  Float    @default(50.0)
+  
+  // Limits
+  minOrderAmount Float @default(100.0)
+  maxOrderAmount Float @default(10000.0)
+  
+  // Settings
+  isAutomatic Boolean @default(false)
+  profitMargin Float? @default(2.0)
+  
+  // Admin
+  updatedBy String?
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("exchange_rates")
+}
+
+model RateHistory {
+  id        String   @id @default(cuid())
+  
+  // Previous rates
+  oldBuyRate Float
+  oldSellRate Float
+  
+  // New rates
+  newBuyRate Float
+  newSellRate Float
+  
+  // Admin
+  updatedBy String
+  
+  // Metadata
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("rate_history")
+}
+model SiteSettings {
+  id String @id @default(cuid())
+
+  // Payment Information
+  binanceUid String @default("")
+  vodafoneCashNumber String @default("")
+
+  // Contact
+  telegramUsername String? @default("")
+  supportEmail String? @default("")
+
+  // Website
+  announcement String? @default("")
+
+  // Enable / Disable Orders
+  buyEnabled Boolean @default(true)
+  sellEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+// Enums
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum OrderType {
+  BUY
+  SELL
+}
+
+enum OrderStatus {
+  PENDING_REVIEW
+  UNDER_VERIFICATION
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum NotificationType {
+  ORDER_SUBMITTED
+  ORDER_APPROVED
+  ORDER_REJECTED
+  ORDER_COMPLETED
+  REVIEW_SUBMITTED
+  SYSTEM_UPDATE
+}
+
+enum ActionType {
+  USER_REGISTRATION
+  USER_LOGIN
+  CREATE_BUY_ORDER
+  CREATE_SELL_ORDER
+  UPLOAD_PROOF
+  SUBMIT_REVIEW
+  ADMIN_LOGIN
+  APPROVE_ORDER
+  REJECT_ORDER
+  MARK_COMPLETED
+  EDIT_EXCHANGE_RATES
+  UPDATE_SETTINGS
+  DELETE_REVIEW
+  EDIT_ORDER
+  EXPORT_ORDERS
+}
