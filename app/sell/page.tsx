@@ -17,6 +17,7 @@ export default function SellPage() {
   const [exchangeRate, setExchangeRate] = useState(50.0);
   const [adminBinanceUid, setAdminBinanceUid] = useState("");
   const [copied, setCopied] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const [orderData, setOrderData] = useState({
     fullName: "",
     phone: "",
@@ -65,9 +66,30 @@ export default function SellPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!file) {
+      alert("الرجاء تحميل إثبات التحويل (صورة التحويل)");
+      return;
+    }
     setLoading(true);
 
     try {
+      // 1. Upload proof screenshot
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const uploadData = await uploadResponse.json();
+      if (!uploadResponse.ok) {
+        throw new Error(uploadData.error || "فشل رفع صورة الإثبات");
+      }
+
+      const proofImageUrl = uploadData.url;
+
+      // 2. Create the order
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -78,6 +100,7 @@ export default function SellPage() {
           phone: orderData.phone,
           binanceUid: orderData.receivingWallet,
           walletNumber: orderData.binanceUid,
+          proofImageUrl,
         }),
       });
 
@@ -196,6 +219,19 @@ export default function SellPage() {
                       <p className="text-sm text-[#F5B942] mt-2">
                         ستستقبل: {amountEgp} EGP
                       </p>
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label htmlFor="proofImage">إثبات التحويل (صورة الشاشة إجباري)</Label>
+                      <input
+                        id="proofImage"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setFile(e.target.files?.[0] || null)}
+                        required
+                        className="w-full px-4 py-3 rounded-lg bg-[#2D2D2D] border border-[#3D3D3D] text-white focus:outline-none focus:border-[#F5B942] transition-colors duration-300 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-[#F5B942] file:text-[#0A0A0A] file:font-semibold hover:file:opacity-90 cursor-pointer text-sm"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">يرجى رفع لقطة شاشة واضحة لإثبات التحويل لتسريع عملية المراجعة.</p>
                     </FormGroup>
 
                     <PrimaryButton

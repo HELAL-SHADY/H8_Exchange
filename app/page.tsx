@@ -31,7 +31,7 @@ export default function HomePage() {
 
   useEffect(() => {
     // Fetch stats
-    fetch("/api/admin/dashboard")
+    fetch("/api/stats")
       .then((res) => res.json())
       .then((data) => {
         if (data.stats) {

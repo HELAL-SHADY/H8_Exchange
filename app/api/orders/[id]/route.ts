@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { sendOrderStatusNotification } from "@/lib/telegram";
 
 export async function GET(
   request: NextRequest,
@@ -54,12 +55,32 @@ export async function PATCH(
       );
     }
 
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!existingOrder) {
+      return NextResponse.json(
+        { error: "Order not found" },
+        { status: 404 }
+      );
+    }
+
     const data = await request.json();
 
     const order = await prisma.order.update({
       where: { id: params.id },
       data,
     });
+
+    // Send Telegram Notification if status or proof changed
+    try {
+      if (order.status !== existingOrder.status || order.proofImageUrl !== existingOrder.proofImageUrl) {
+        await sendOrderStatusNotification(order, existingOrder.status);
+      }
+    } catch (telegramError) {
+      console.error("Failed to send Telegram order update notification:", telegramError);
+    }
 
     return NextResponse.json(order);
   } catch (error: any) {

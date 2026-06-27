@@ -19,6 +19,7 @@ interface Order {
   walletNumber: string;
   createdAt: string;
   adminNote?: string;
+  proofImageUrl?: string;
 }
 
 export default function AdminOrdersPage() {
@@ -231,6 +232,28 @@ export default function AdminOrdersPage() {
                           </p>
                         </div>
                       </div>
+
+                      {order.proofImageUrl && (
+                        <div className="mt-4 p-4 bg-[#1A1A1A] rounded-lg border border-[#2D2D2D]" onClick={(e) => e.stopPropagation()}>
+                          <p className="text-[#F5B942] font-semibold mb-2">📷 إثبات التحويل (Screenshot):</p>
+                          <div className="relative max-w-md overflow-hidden rounded border border-[#3D3D3D] mb-2 bg-[#0F0F0F]">
+                            <img
+                              src={order.proofImageUrl}
+                              alt="إثبات التحويل"
+                              className="w-full object-contain max-h-96 hover:scale-[1.02] transition-transform cursor-pointer"
+                              onClick={() => window.open(order.proofImageUrl, "_blank")}
+                            />
+                          </div>
+                          <a
+                            href={order.proofImageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block text-sm text-[#F5B942] hover:underline"
+                          >
+                            فتح الصورة في علامة تبويب جديدة ↗
+                          </a>
+                        </div>
+                      )}
 
                       {/* Actions */}
                       {order.status === "PENDING_REVIEW" && (

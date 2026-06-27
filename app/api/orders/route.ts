@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { sendNewOrderNotification } from "@/lib/telegram";
 
 export async function GET(request: NextRequest) {
   try {
@@ -108,6 +109,13 @@ export async function POST(request: NextRequest) {
         message: `تم إنشاء طلب ${type === "BUY" ? "شراء" : "بيع"} بقيمة ${amount}`,
       },
     });
+
+    // Send Telegram Notification
+    try {
+      await sendNewOrderNotification(order);
+    } catch (telegramError) {
+      console.error("Failed to send Telegram notification:", telegramError);
+    }
 
     // Log the action
     await prisma.auditLog.create({

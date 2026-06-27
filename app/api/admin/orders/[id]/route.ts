@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { sendOrderStatusNotification } from "@/lib/telegram";
 
 async function checkAdminRole(session: any) {
   if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role)) {
@@ -83,6 +84,13 @@ export async function PATCH(
         message: adminNote || `Order ${newStatus.toLowerCase()}`,
       },
     });
+
+    // Send Telegram Notification
+    try {
+      await sendOrderStatusNotification(order, existingOrder.status);
+    } catch (telegramError) {
+      console.error("Failed to send Telegram order status update notification:", telegramError);
+    }
 
     // Log the action
     await prisma.auditLog.create({
