@@ -126,17 +126,55 @@ export default function HomePage() {
             <p className="text-2xl md:text-3xl text-gray-300 mb-8">
               شراء وبيع USDT مقابل الجنيه المصري بسرعة وأمان
             </p>
-            <div className="flex gap-4 justify-center flex-wrap">
-              <Link href="/buy">
-                <PrimaryButton className="text-lg px-8">
-                  شراء USDT
-                </PrimaryButton>
-              </Link>
-              <Link href="/sell">
-                <SecondaryButton className="text-lg px-8">
-                  بيع USDT
-                </SecondaryButton>
-              </Link>
+            <div className="flex gap-6 justify-center flex-wrap mt-4">
+              {/* Buy Button */}
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                <Link href="/buy">
+                  <div className="relative group cursor-pointer rounded-2xl overflow-hidden"
+                    style={{ minWidth: 180 }}>
+                    {/* Glow */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#F5B942] to-[#e6a120] opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ boxShadow: "0 0 32px 6px rgba(245,185,66,0.45)" }} />
+                    <div className="relative z-10 flex flex-col items-center justify-center gap-1 px-10 py-5">
+                      <div className="flex items-center gap-2">
+                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+                          <path d="M12 4v16M4 12l8-8 8 8" stroke="#0A0A0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <span className="text-[#0A0A0A] font-extrabold text-xl tracking-wide">شراء USDT</span>
+                      </div>
+                      <span className="text-[#0A0A0A]/70 text-sm font-medium">
+                        {exchangeRate.buyRate} EGP / USDT
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+
+              {/* Sell Button */}
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                <Link href="/sell">
+                  <div className="relative group cursor-pointer rounded-2xl overflow-hidden"
+                    style={{ minWidth: 180 }}>
+                    {/* Border glow effect */}
+                    <div className="absolute inset-0 rounded-2xl border-2 border-[#F5B942]/60 group-hover:border-[#F5B942] transition-colors duration-300" />
+                    <div className="absolute inset-0 bg-[#1A1A1A] group-hover:bg-[#222]/90 transition-colors duration-300" />
+                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ boxShadow: "0 0 28px 4px rgba(245,185,66,0.25)" }} />
+                    <div className="relative z-10 flex flex-col items-center justify-center gap-1 px-10 py-5">
+                      <div className="flex items-center gap-2">
+                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+                          <path d="M12 20V4M4 12l8 8 8-8" stroke="#F5B942" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <span className="text-[#F5B942] font-extrabold text-xl tracking-wide">بيع USDT</span>
+                      </div>
+                      <span className="text-gray-400 text-sm font-medium">
+                        {exchangeRate.sellRate} EGP / USDT
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
             </div>
           </motion.div>
 
