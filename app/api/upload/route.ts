@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: "dk2laxr0h",
+  api_key: "152822788443423",
+  api_secret: "PSmCuEn_TWtMfj3ZebrTy3YqHzQ",
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,27 +19,25 @@ export async function POST(request: NextRequest) {
     // Validate file type
     const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!validTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Only image files (jpeg, png, webp, gif) are allowed" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Only image files (jpeg, png, webp, gif) are allowed" },
+        { status: 400 }
+      );
     }
 
+    // Convert file to base64 data URI for Cloudinary upload
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const base64 = buffer.toString("base64");
+    const dataUri = `data:${file.type};base64,${base64}`;
 
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-
-    // Generate unique file name
-    const ext = path.extname(file.name) || ".png";
-    const filename = `${uuidv4()}${ext}`;
-    const filepath = path.join(uploadsDir, filename);
-
-    // Save the file
-    await writeFile(filepath, buffer);
-
-    return NextResponse.json({ 
-      url: `/uploads/${filename}` 
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(dataUri, {
+      folder: "h8_exchange_receipts",
+      resource_type: "image",
     });
+
+    return NextResponse.json({ url: result.secure_url });
   } catch (error: any) {
     console.error("Error uploading file:", error);
     return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
