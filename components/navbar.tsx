@@ -12,7 +12,27 @@ export function Navbar() {
   return (
     <nav className="bg-[#0A0A0A] border-b border-[#2D2D2D] sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 relative">
+          {/* Centered HELAL Telegram Link */}
+          <a
+            href="https://t.me/HELAL_SHADY"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute left-1/2 -translate-x-1/2 font-extrabold text-lg tracking-[0.25em] select-none transition-all duration-300"
+            style={{
+              background: "linear-gradient(90deg, #F5B942, #fff8e1, #F5B942)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              textShadow: "none",
+              filter: "drop-shadow(0 0 6px rgba(245,185,66,0.5))",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.filter = "drop-shadow(0 0 14px rgba(245,185,66,0.9))")}
+            onMouseLeave={e => (e.currentTarget.style.filter = "drop-shadow(0 0 6px rgba(245,185,66,0.5))")}
+          >
+            HELAL
+          </a>
+
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <div className="text-2xl font-bold bg-gradient-to-r from-[#F5B942] to-[#E6A430] bg-clip-text text-transparent">
