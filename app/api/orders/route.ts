@@ -48,14 +48,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { type, amount, fullName, phone, binanceUid, walletNumber, proofImageUrl } = await request.json();
+    const { type, amount, binanceUid, walletNumber, proofImageUrl } = await request.json();
 
-    if (!type || !amount || !fullName || !phone || !binanceUid || !walletNumber) {
+    if (!type || !amount || !binanceUid || !walletNumber) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
+
+    // جلب بيانات المستخدم (الاسم ورقم الهاتف) من حسابه المسجل
+    const user = await prisma.user.findUnique({
+      where: { id: (session.user as any).id },
+      select: { name: true, phone: true },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    const fullName = user.name;
+    const phone = user.phone || "";
 
     // Get current exchange rate
     const exchangeRate = await prisma.exchangeRate.findFirst();
@@ -137,4 +153,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

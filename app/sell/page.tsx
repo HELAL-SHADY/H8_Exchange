@@ -19,8 +19,6 @@ export default function SellPage() {
   const [copied, setCopied] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [orderData, setOrderData] = useState({
-    fullName: "",
-    phone: "",
     binanceUid: "",
     receivingWallet: "",
     amountUsdt: "",
@@ -33,13 +31,11 @@ export default function SellPage() {
       router.push("/auth/login");
     }
 
-    // جلب سعر الصرف
     fetch("/api/admin/exchange-rates")
       .then((res) => res.json())
       .then((data) => setExchangeRate(data.sellRate))
       .catch(console.error);
 
-    // جلب Binance UID الخاص بالإدارة من إعدادات الموقع
     fetch("/api/admin/site-settings")
       .then((res) => res.json())
       .then((data) => {
@@ -73,7 +69,6 @@ export default function SellPage() {
     setLoading(true);
 
     try {
-      // 1. Upload proof screenshot
       const formData = new FormData();
       formData.append("file", file);
 
@@ -89,15 +84,12 @@ export default function SellPage() {
 
       const proofImageUrl = uploadData.url;
 
-      // 2. Create the order
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "SELL",
           amount: parseFloat(orderData.amountUsdt),
-          fullName: orderData.fullName,
-          phone: orderData.phone,
           binanceUid: orderData.receivingWallet,
           walletNumber: orderData.binanceUid,
           proofImageUrl,
@@ -143,35 +135,6 @@ export default function SellPage() {
               <Card>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <FormGroup>
-                      <Label htmlFor="fullName">الاسم الكامل</Label>
-                      <Input
-                        id="fullName"
-                        placeholder="أحمد محمد"
-                        value={orderData.fullName}
-                        onChange={(e) =>
-                          setOrderData({
-                            ...orderData,
-                            fullName: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="phone">رقم الهاتف</Label>
-                      <Input
-                        id="phone"
-                        placeholder="201000000000"
-                        value={orderData.phone}
-                        onChange={(e) =>
-                          setOrderData({ ...orderData, phone: e.target.value })
-                        }
-                        required
-                      />
-                    </FormGroup>
-
                     <FormGroup>
                       <Label htmlFor="binanceUid">Binance UID الخاص بك</Label>
                       <Input

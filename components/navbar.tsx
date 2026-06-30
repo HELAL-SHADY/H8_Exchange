@@ -70,6 +70,12 @@ export function Navbar() {
 
             {session?.user ? (
               <div className="flex items-center gap-4">
+                <Link
+                  href="/my-orders"
+                  className="text-gray-400 hover:text-[#F5B942] transition-colors"
+                >
+                  طلباتي
+                </Link>
                 {(session.user as any).role === "ADMIN" ||
                 (session.user as any).role === "SUPER_ADMIN" ? (
                   <Link
@@ -110,30 +116,41 @@ export function Navbar() {
           <div className="md:hidden pb-4 space-y-2">
             <Link
               href="/buy"
+              onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-2 text-gray-400 hover:text-[#F5B942] hover:bg-[#1A1A1A] rounded-lg"
             >
               شراء
             </Link>
             <Link
               href="/sell"
+              onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-2 text-gray-400 hover:text-[#F5B942] hover:bg-[#1A1A1A] rounded-lg"
             >
               بيع
             </Link>
             <Link
               href="/track"
+              onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-2 text-gray-400 hover:text-[#F5B942] hover:bg-[#1A1A1A] rounded-lg"
             >
               تتبع
             </Link>
             <Link
               href="/reviews"
+              onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-2 text-gray-400 hover:text-[#F5B942] hover:bg-[#1A1A1A] rounded-lg"
             >
               تقييمات
             </Link>
             {session?.user ? (
               <div className="pt-2 border-t border-[#2D2D2D] space-y-2">
+                <Link
+                  href="/my-orders"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-2 text-gray-400 hover:text-[#F5B942] hover:bg-[#1A1A1A] rounded-lg"
+                >
+                  طلباتي
+                </Link>
                 {((session.user as any).role === "ADMIN" ||
                 (session.user as any).role === "SUPER_ADMIN") && (
                   <Link
@@ -154,6 +171,7 @@ export function Navbar() {
             ) : (
               <Link
                 href="/auth/login"
+                onClick={() => setMobileMenuOpen(false)}
                 className="block px-4 py-2 bg-[#F5B942] text-[#0A0A0A] rounded-lg font-semibold text-center hover:shadow-lg hover:shadow-[#F5B942]/50 transition-all"
               >
                 تسجيل الدخول
