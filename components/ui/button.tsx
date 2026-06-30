@@ -19,7 +19,8 @@ export function PrimaryButton({
 }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <Button
-      className="bg-gradient-to-r from-[#F5B942] to-[#E6A430] text-[#0A0A0A] hover:shadow-lg hover:shadow-[#F5B942]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{ backgroundColor: "#F5B942" }}
+      className="text-[#0A0A0A] hover:bg-[#E6A430] hover:shadow-lg hover:shadow-[#F5B942]/50 disabled:opacity-50 disabled:cursor-not-allowed"
       {...props}
     >
       {children}
