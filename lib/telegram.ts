@@ -99,6 +99,25 @@ function formatStatus(status: string): string {
 }
 
 /**
+ * Helper to translate payment/receive method codes to readable labels
+ */
+function formatMethod(method?: string | null): string {
+  if (!method) return "—";
+  switch (method) {
+    case "VODAFONE_CASH":
+      return "Vodafone Cash";
+    case "INSTAPAY":
+      return "InstaPay";
+    case "BINANCE_PAY":
+      return "Binance Pay";
+    case "BYBIT_PAY":
+      return "Bybit Pay";
+    default:
+      return method;
+  }
+}
+
+/**
  * Sends a notification when a new order is submitted
  */
 export async function sendNewOrderNotification(order: any): Promise<boolean> {
@@ -113,7 +132,9 @@ export async function sendNewOrderNotification(order: any): Promise<boolean> {
     `<b>👤 العميل:</b> ${order.fullName}`,
     `<b>📞 رقم الهاتف:</b> <code>${order.phone}</code>`,
     `<b>💰 القيمة:</b> <b>${order.amount} ${currency}</b>`,
-    `<b>💳 Binance UID:</b> <code>${order.binanceUid}</code>`,
+    `<b>💳 طريقة الدفع/الإرسال:</b> ${formatMethod(order.paymentMethod)}`,
+    `<b>📥 طريقة الاستلام:</b> ${formatMethod(order.receiveMethod)}`,
+    `<b>💳 Binance/Bybit ID:</b> <code>${order.binanceUid}</code>`,
     `<b>👛 رقم المحفظة:</b> <code>${order.walletNumber}</code>`,
     `<b>📅 التاريخ:</b> ${new Date(order.createdAt || Date.now()).toLocaleString("ar-EG", { timeZone: "Africa/Cairo" })}`,
     `--------------------------------------------`,
@@ -141,6 +162,7 @@ export async function sendOrderStatusNotification(order: any, oldStatus?: string
     `<b>📌 رقم الطلب:</b> <code>${order.id}</code>`,
     `<b>👤 العميل:</b> ${order.fullName}`,
     `<b>💰 القيمة:</b> <b>${order.amount} ${currency}</b>`,
+    `<b>📥 طريقة الاستلام:</b> ${formatMethod(order.receiveMethod)}`,
     oldStatus ? `<b>🟡 الحالة السابقة:</b> ${formatStatus(oldStatus)}` : "",
     `<b>🟢 الحالة الجديدة:</b> ${formatStatus(order.status)}`,
     order.adminNote ? `<b>📝 ملاحظة الإدارة:</b> ${order.adminNote}` : "",

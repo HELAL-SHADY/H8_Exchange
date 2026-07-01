@@ -11,70 +11,75 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  phone     String?
-  password  String
-  role      Role     @default(USER)
-  
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  phone        String?
+  password     String
+  role         Role     @default(USER)
+
   // User profile
-  binanceUid  String?
+  binanceUid   String?
   walletNumber String?
   profileImage String?
-  
+
   // Relationships
-  orders      Order[]
-  reviews     Review[]
+  orders        Order[]
+  reviews       Review[]
   notifications Notification[]
-  auditLogs   AuditLog[]
-  
+  auditLogs     AuditLog[]
+
   // Metadata
-  isVerified  Boolean @default(false)
-  isBanned    Boolean @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isVerified Boolean  @default(false)
+  isBanned   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@map("users")
 }
 
 model Order {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Order details
-  type      OrderType @default(BUY)
-  amount    Float
-  status    OrderStatus @default(PENDING_REVIEW)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Payment method used for this order
+  // Order details
+  type   OrderType   @default(BUY)
+  amount Float
+  status OrderStatus @default(PENDING_REVIEW)
+
+  // Payment method used for this order (كيف دفع/أرسل العميل)
   // BUY orders:  VODAFONE_CASH | INSTAPAY
   // SELL orders: BINANCE_PAY   | BYBIT_PAY
   paymentMethod String?
-  
+
+  // Receive method (إزاي العميل عايز يستلم)
+  // BUY orders:  BINANCE_PAY   | BYBIT_PAY   (يستلم USDT)
+  // SELL orders: VODAFONE_CASH | INSTAPAY    (يستلم EGP)
+  receiveMethod String?
+
   // User information
-  fullName  String
-  phone     String
-  binanceUid String
+  fullName     String
+  phone        String
+  binanceUid   String
   walletNumber String
-  
+
   // Proof and verification
   proofImageUrl String?
   proofImageId  String?
-  
+
   // Admin notes
-  adminNote String?
-  approvedBy String?
-  approvedAt DateTime?
-  rejectedAt DateTime?
+  adminNote   String?
+  approvedBy  String?
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
   completedAt DateTime?
-  
+
   // Relationships
-  reviews   Review[]
+  reviews       Review[]
   notifications Notification[]
-  auditLogs AuditLog[]
-  
+  auditLogs     AuditLog[]
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -86,16 +91,16 @@ model Order {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
   // Review content
-  rating    Int      @default(5)
-  comment   String?
-  
+  rating  Int     @default(5)
+  comment String?
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -106,22 +111,22 @@ model Review {
 }
 
 model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderId   String?
-  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  
+  id      String  @id @default(cuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
   // Notification details
   type      NotificationType
   title     String
   message   String
   actionUrl String?
-  
+
   // Status
-  isRead    Boolean  @default(false)
-  readAt    DateTime?
-  
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
   // Metadata
   createdAt DateTime @default(now())
 
@@ -131,21 +136,21 @@ model Notification {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  orderId   String?
-  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  
+  id      String  @id @default(cuid())
+  userId  String?
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
   // Action details
-  actionType ActionType
+  actionType        ActionType
   actionDescription String
-  
+
   // Metadata
-  ipAddress String?
+  ipAddress  String?
   deviceInfo String?
-  userAgent String?
-  
+  userAgent  String?
+
   // Timestamp
   createdAt DateTime @default(now())
 
@@ -156,23 +161,23 @@ model AuditLog {
 }
 
 model ExchangeRate {
-  id        String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Current rates
-  buyRate   Float    @default(51.0)
-  sellRate  Float    @default(50.0)
-  
+  buyRate  Float @default(51.0)
+  sellRate Float @default(50.0)
+
   // Limits
   minOrderAmount Float @default(100.0)
   maxOrderAmount Float @default(10000.0)
-  
+
   // Settings
-  isAutomatic Boolean @default(false)
-  profitMargin Float? @default(2.0)
-  
+  isAutomatic  Boolean @default(false)
+  profitMargin Float?  @default(2.0)
+
   // Admin
   updatedBy String?
-  
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -181,45 +186,46 @@ model ExchangeRate {
 }
 
 model RateHistory {
-  id        String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Previous rates
-  oldBuyRate Float
+  oldBuyRate  Float
   oldSellRate Float
-  
+
   // New rates
-  newBuyRate Float
+  newBuyRate  Float
   newSellRate Float
-  
+
   // Admin
   updatedBy String
-  
+
   // Metadata
   createdAt DateTime @default(now())
 
   @@index([createdAt])
   @@map("rate_history")
 }
+
 model SiteSettings {
   id String @id @default(cuid())
 
   // Payment Information
-  binanceUid String @default("")
+  binanceUid         String @default("")
   vodafoneCashNumber String @default("")
 
   // New payment methods
   instapayNumber String @default("")
-  bybitPayId String @default("")
+  bybitPayId     String @default("")
 
   // Contact
   telegramUsername String? @default("")
-  supportEmail String? @default("")
+  supportEmail     String? @default("")
 
   // Website
   announcement String? @default("")
 
   // Enable / Disable Orders
-  buyEnabled Boolean @default(true)
+  buyEnabled  Boolean @default(true)
   sellEnabled Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -227,6 +233,7 @@ model SiteSettings {
 
   @@map("site_settings")
 }
+
 // Enums
 enum Role {
   USER

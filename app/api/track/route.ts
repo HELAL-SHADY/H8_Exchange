@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
         rejectedAt: true,
         completedAt: true,
         fullName: true,
+        paymentMethod: true,
+        receiveMethod: true,
       },
     });
 

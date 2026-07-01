@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 type SellPaymentMethod = "BINANCE_PAY" | "BYBIT_PAY";
+type SellReceiveMethod = "VODAFONE_CASH" | "INSTAPAY";
 
 export default function SellPage() {
   const { data: session } = useSession();
@@ -20,6 +21,7 @@ export default function SellPage() {
   const [adminBinanceUid, setAdminBinanceUid] = useState("");
   const [bybitPayId, setBybitPayId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<SellPaymentMethod>("BINANCE_PAY");
+  const [receiveMethod, setReceiveMethod] = useState<SellReceiveMethod>("VODAFONE_CASH");
   const [copied, setCopied] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [orderData, setOrderData] = useState({
@@ -104,6 +106,7 @@ export default function SellPage() {
           walletNumber: orderData.binanceUid,
           proofImageUrl,
           paymentMethod,
+          receiveMethod,
         }),
       });
 
@@ -193,13 +196,48 @@ export default function SellPage() {
                       />
                     </FormGroup>
 
+                    {/* Receive Method Switcher */}
+                    <FormGroup>
+                      <Label>طريقة استلام EGP</Label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setReceiveMethod("VODAFONE_CASH")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            receiveMethod === "VODAFONE_CASH"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          Vodafone Cash
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReceiveMethod("INSTAPAY")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            receiveMethod === "INSTAPAY"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          InstaPay
+                        </button>
+                      </div>
+                    </FormGroup>
+
                     <FormGroup>
                       <Label htmlFor="receivingWallet">
-                        محفظة الاستقبال (Vodafone Cash)
+                        {receiveMethod === "VODAFONE_CASH"
+                          ? "محفظة الاستقبال (Vodafone Cash)"
+                          : "رقم / رابط InstaPay للاستقبال"}
                       </Label>
                       <Input
                         id="receivingWallet"
-                        placeholder="201000000000"
+                        placeholder={
+                          receiveMethod === "VODAFONE_CASH"
+                            ? "201000000000"
+                            : "201000000000 أو yourname@instapay"
+                        }
                         value={orderData.receivingWallet}
                         onChange={(e) =>
                           setOrderData({
@@ -313,6 +351,14 @@ export default function SellPage() {
                         </p>
                       )}
                     </div>
+                    <div className="pt-4 border-t border-[#2D2D2D]">
+                      <p className="text-gray-500 text-sm mb-2">
+                        ستستلم EGP عبر:
+                      </p>
+                      <p className="font-semibold text-[#F5B942]">
+                        {receiveMethod === "VODAFONE_CASH" ? "Vodafone Cash" : "InstaPay"}
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -328,7 +374,11 @@ export default function SellPage() {
                     </li>
                     <li>خذ لقطة شاشة للتحويل</li>
                     <li>سيتم التحقق من العملية</li>
-                    <li>ستستقبل EGP في محفظتك</li>
+                    <li>
+                      ستستقبل EGP عبر{" "}
+                      {receiveMethod === "VODAFONE_CASH" ? "Vodafone Cash" : "InstaPay"}{" "}
+                      في محفظتك
+                    </li>
                   </ol>
                 </CardContent>
               </Card>

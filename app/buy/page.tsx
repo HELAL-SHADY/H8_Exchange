@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 
 type BuyPaymentMethod = "VODAFONE_CASH" | "INSTAPAY";
+type BuyReceiveMethod = "BINANCE_PAY" | "BYBIT_PAY";
 
 export default function BuyPage() {
   const { data: session } = useSession();
@@ -21,6 +22,7 @@ export default function BuyPage() {
   const [vodafoneCashNumber, setVodafoneCashNumber] = useState("");
   const [instapayNumber, setInstapayNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<BuyPaymentMethod>("VODAFONE_CASH");
+  const [receiveMethod, setReceiveMethod] = useState<BuyReceiveMethod>("BINANCE_PAY");
   const [copied, setCopied] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [orderData, setOrderData] = useState({
@@ -105,6 +107,7 @@ export default function BuyPage() {
           walletNumber: orderData.walletNumber,
           proofImageUrl,
           paymentMethod,
+          receiveMethod,
         }),
       });
 
@@ -176,8 +179,44 @@ export default function BuyPage() {
                       </div>
                     </FormGroup>
 
+                    {/* Receive Method Switcher */}
                     <FormGroup>
-                      <Label htmlFor="binanceUid">Binance UID</Label>
+                      <Label>طريقة استلام USDT</Label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setReceiveMethod("BINANCE_PAY")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            receiveMethod === "BINANCE_PAY"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          Binance Pay
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReceiveMethod("BYBIT_PAY")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            receiveMethod === "BYBIT_PAY"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          Bybit Pay
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        اختر المنصة التي تريد استلام USDT عليها
+                      </p>
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label htmlFor="binanceUid">
+                        {receiveMethod === "BINANCE_PAY"
+                          ? "Binance UID الخاص بك (لاستقبال USDT)"
+                          : "Bybit Pay ID الخاص بك (لاستقبال USDT)"}
+                      </Label>
                       <Input
                         id="binanceUid"
                         placeholder="123456789"
@@ -295,6 +334,14 @@ export default function BuyPage() {
                         </p>
                       )}
                     </div>
+                    <div className="pt-4 border-t border-[#2D2D2D]">
+                      <p className="text-gray-500 text-sm mb-2">
+                        ستستلم USDT عبر:
+                      </p>
+                      <p className="font-semibold text-[#F5B942]">
+                        {receiveMethod === "BINANCE_PAY" ? "Binance Pay" : "Bybit Pay"}
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -312,7 +359,11 @@ export default function BuyPage() {
                     </li>
                     <li>خذ لقطة شاشة للحوالة</li>
                     <li>سيتم التحقق من الحوالة من قبل الإدارة</li>
-                    <li>سيتم إرسال USDT إلى محفظتك</li>
+                    <li>
+                      سيتم إرسال USDT إلى{" "}
+                      {receiveMethod === "BINANCE_PAY" ? "Binance Pay" : "Bybit Pay"}{" "}
+                      الخاص بك
+                    </li>
                   </ol>
                 </CardContent>
               </Card>
@@ -343,7 +394,7 @@ export default function BuyPage() {
               <CardContent>
                 <h3 className="text-lg font-bold mb-4">ملاحظات مهمة</h3>
                 <ul className="space-y-2 text-sm text-gray-400">
-                  <li>• تأكد من صحة بيانات Binance UID</li>
+                  <li>• تأكد من صحة بيانات الحساب المُراد الاستلام عليه (Binance / Bybit)</li>
                   <li>• احتفظ بلقطة شاشة الحوالة</li>
                   <li>• سيتم التحقق من الطلب خلال 30 دقيقة</li>
                   <li>• تواصل معنا عبر Telegram للدعم</li>

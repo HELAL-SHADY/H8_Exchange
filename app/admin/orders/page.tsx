@@ -20,7 +20,16 @@ interface Order {
   createdAt: string;
   adminNote?: string;
   proofImageUrl?: string;
+  paymentMethod?: string;
+  receiveMethod?: string;
 }
+
+const methodLabels: Record<string, string> = {
+  VODAFONE_CASH: "Vodafone Cash",
+  INSTAPAY: "InstaPay",
+  BINANCE_PAY: "Binance Pay",
+  BYBIT_PAY: "Bybit Pay",
+};
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -214,11 +223,13 @@ export default function AdminOrdersPage() {
                           <p className="font-semibold">{order.phone}</p>
                         </div>
                         <div>
-                          <p className="text-gray-500 text-sm">Binance UID</p>
+                          <p className="text-gray-500 text-sm">
+                            {order.type === "BUY" ? "Binance/Bybit ID الخاص بالعميل" : "Binance/Bybit UID"}
+                          </p>
                           <p className="font-semibold">{order.binanceUid}</p>
                         </div>
                         <div>
-                          <p className="text-gray-500 text-sm">المحفظة</p>
+                          <p className="text-gray-500 text-sm">المحفظة / الرقم المرسل منه</p>
                           <p className="font-semibold">{order.walletNumber}</p>
                         </div>
                         <div>
@@ -229,6 +240,22 @@ export default function AdminOrdersPage() {
                           <p className="text-gray-500 text-sm">التاريخ</p>
                           <p className="font-semibold">
                             {new Date(order.createdAt).toLocaleString("ar-EG")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-sm">طريقة الدفع/الإرسال</p>
+                          <p className="font-semibold text-[#F5B942]">
+                            {order.paymentMethod
+                              ? methodLabels[order.paymentMethod] || order.paymentMethod
+                              : "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-sm">طريقة الاستلام</p>
+                          <p className="font-semibold text-[#F5B942]">
+                            {order.receiveMethod
+                              ? methodLabels[order.receiveMethod] || order.receiveMethod
+                              : "—"}
                           </p>
                         </div>
                       </div>
@@ -244,7 +271,7 @@ export default function AdminOrdersPage() {
                               onClick={() => window.open(order.proofImageUrl, "_blank")}
                             />
                           </div>
-                          <a
+                          
                             href={order.proofImageUrl}
                             target="_blank"
                             rel="noopener noreferrer"

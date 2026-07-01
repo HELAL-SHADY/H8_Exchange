@@ -20,6 +20,8 @@ interface Order {
   approvedAt?: string;
   rejectedAt?: string;
   completedAt?: string;
+  paymentMethod?: string;
+  receiveMethod?: string;
 }
 
 const StatusSteps = {
@@ -36,6 +38,13 @@ const StatusDisplay = {
   APPROVED: { label: "موافق عليه", icon: CheckCircle, color: "green" },
   REJECTED: { label: "مرفوض", icon: XCircle, color: "red" },
   COMPLETED: { label: "مكتمل", icon: CheckCircle, color: "green" },
+};
+
+const methodLabels: Record<string, string> = {
+  VODAFONE_CASH: "Vodafone Cash",
+  INSTAPAY: "InstaPay",
+  BINANCE_PAY: "Binance Pay",
+  BYBIT_PAY: "Bybit Pay",
 };
 
 export default function TrackPage() {
@@ -217,6 +226,26 @@ export default function TrackPage() {
                           order.status}
                       </p>
                     </div>
+                    {order.paymentMethod && (
+                      <div>
+                        <p className="text-gray-500 text-sm mb-1">
+                          {order.type === "BUY" ? "طريقة الدفع" : "طريقة إرسال USDT"}
+                        </p>
+                        <p className="font-semibold text-[#F5B942]">
+                          {methodLabels[order.paymentMethod] || order.paymentMethod}
+                        </p>
+                      </div>
+                    )}
+                    {order.receiveMethod && (
+                      <div>
+                        <p className="text-gray-500 text-sm mb-1">
+                          {order.type === "BUY" ? "طريقة استلام USDT" : "طريقة استلام EGP"}
+                        </p>
+                        <p className="font-semibold text-[#F5B942]">
+                          {methodLabels[order.receiveMethod] || order.receiveMethod}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -322,7 +351,7 @@ export default function TrackPage() {
                         {!session ? (
                           <div className="p-4 bg-[#1A1A1A] rounded-lg border border-[#2D2D2D] text-center">
                             <p className="text-gray-400 text-sm mb-3">يجب عليك تسجيل الدخول لإضافة تقييم.</p>
-                            <a
+                            
                               href={`/auth/login?callbackUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
                               className="inline-block px-4 py-2 bg-[#F5B942] text-[#0A0A0A] rounded-lg font-semibold hover:shadow-lg hover:shadow-[#F5B942]/50 transition-all text-sm"
                             >
@@ -394,7 +423,7 @@ export default function TrackPage() {
                   <p className="text-gray-500 text-sm mb-4">
                     تواصل معنا عبر Telegram للحصول على الدعم الفوري
                   </p>
-                  <a
+                  
                     href="https://t.me/HELAL_SHADY"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -413,4 +442,3 @@ export default function TrackPage() {
     </main>
   );
 }
-

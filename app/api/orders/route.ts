@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { type, amount, binanceUid, walletNumber, proofImageUrl, paymentMethod } =
+    const { type, amount, binanceUid, walletNumber, proofImageUrl, paymentMethod, receiveMethod } =
       await request.json();
 
     if (!type || !amount || !binanceUid || !walletNumber) {
@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
         walletNumber,
         proofImageUrl,
         paymentMethod,
+        receiveMethod,
         status: "PENDING_REVIEW",
       },
     });
