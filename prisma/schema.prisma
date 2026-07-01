@@ -47,6 +47,11 @@ model Order {
   type      OrderType @default(BUY)
   amount    Float
   status    OrderStatus @default(PENDING_REVIEW)
+
+  // Payment method used for this order
+  // BUY orders:  VODAFONE_CASH | INSTAPAY
+  // SELL orders: BINANCE_PAY   | BYBIT_PAY
+  paymentMethod String?
   
   // User information
   fullName  String
@@ -201,6 +206,10 @@ model SiteSettings {
   // Payment Information
   binanceUid String @default("")
   vodafoneCashNumber String @default("")
+
+  // New payment methods
+  instapayNumber String @default("")
+  bybitPayId String @default("")
 
   // Contact
   telegramUsername String? @default("")

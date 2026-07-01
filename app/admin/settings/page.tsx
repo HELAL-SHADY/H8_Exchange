@@ -16,6 +16,8 @@ interface ExchangeRates {
 interface SiteSettings {
   binanceUid: string;
   vodafoneCashNumber: string;
+  instapayNumber: string;
+  bybitPayId: string;
   telegramUsername: string;
   supportEmail: string;
   announcement: string;
@@ -39,6 +41,8 @@ export default function AdminSettingsPage() {
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
     binanceUid: "",
     vodafoneCashNumber: "",
+    instapayNumber: "",
+    bybitPayId: "",
     telegramUsername: "",
     supportEmail: "",
     announcement: "",
@@ -72,6 +76,8 @@ export default function AdminSettingsPage() {
         setSiteSettings({
           binanceUid: data.binanceUid || "",
           vodafoneCashNumber: data.vodafoneCashNumber || "",
+          instapayNumber: data.instapayNumber || "",
+          bybitPayId: data.bybitPayId || "",
           telegramUsername: data.telegramUsername || "",
           supportEmail: data.supportEmail || "",
           announcement: data.announcement || "",
@@ -146,7 +152,7 @@ export default function AdminSettingsPage() {
           <CardContent>
             <h2 className="text-xl sm:text-2xl font-bold mb-1">إعدادات الدفع</h2>
             <p className="text-sm text-gray-400 mb-6">
-              رقم Vodafone Cash و Binance UID الخاصَّين بالإدارة — يظهران للعملاء في صفحات الشراء والبيع
+              طرق الدفع المتاحة للعملاء — تظهر في صفحات الشراء والبيع
             </p>
 
             <form onSubmit={handleSiteSettingsSubmit} className="space-y-6">
@@ -173,6 +179,28 @@ export default function AdminSettingsPage() {
                   </p>
                 </FormGroup>
 
+                {/* InstaPay */}
+                <FormGroup>
+                  <Label htmlFor="instapayNumber">
+                    رقم / رابط InstaPay 💠
+                  </Label>
+                  <Input
+                    id="instapayNumber"
+                    type="text"
+                    placeholder="مثال: 01069053242 أو yourname@instapay"
+                    value={siteSettings.instapayNumber}
+                    onChange={(e) =>
+                      setSiteSettings({
+                        ...siteSettings,
+                        instapayNumber: e.target.value,
+                      })
+                    }
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    يُعرض للعملاء كطريقة بديلة في صفحة الشراء (EGP)
+                  </p>
+                </FormGroup>
+
                 {/* Binance UID */}
                 <FormGroup>
                   <Label htmlFor="binanceUid">
@@ -194,10 +222,35 @@ export default function AdminSettingsPage() {
                     يُعرض للعملاء في صفحة البيع (بيع USDT مقابل EGP)
                   </p>
                 </FormGroup>
+
+                {/* Bybit Pay */}
+                <FormGroup>
+                  <Label htmlFor="bybitPayId">
+                    Bybit Pay ID 💠
+                  </Label>
+                  <Input
+                    id="bybitPayId"
+                    type="text"
+                    placeholder="مثال: 123456789"
+                    value={siteSettings.bybitPayId}
+                    onChange={(e) =>
+                      setSiteSettings({
+                        ...siteSettings,
+                        bybitPayId: e.target.value,
+                      })
+                    }
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    يُعرض للعملاء كطريقة بديلة في صفحة البيع (USDT)
+                  </p>
+                </FormGroup>
               </div>
 
               {/* Preview */}
-              {(siteSettings.vodafoneCashNumber || siteSettings.binanceUid) && (
+              {(siteSettings.vodafoneCashNumber ||
+                siteSettings.binanceUid ||
+                siteSettings.instapayNumber ||
+                siteSettings.bybitPayId) && (
                 <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#F5B942]/20">
                   <p className="text-xs text-[#F5B942] font-semibold mb-3 uppercase tracking-wide">
                     معاينة — ما سيراه العملاء
@@ -211,11 +264,27 @@ export default function AdminSettingsPage() {
                         </span>
                       </div>
                     )}
+                    {siteSettings.instapayNumber && (
+                      <div>
+                        <span className="text-gray-500">InstaPay:</span>
+                        <span className="text-white font-semibold mr-2">
+                          {siteSettings.instapayNumber}
+                        </span>
+                      </div>
+                    )}
                     {siteSettings.binanceUid && (
                       <div>
                         <span className="text-gray-500">Binance UID:</span>
                         <span className="text-white font-semibold mr-2">
                           {siteSettings.binanceUid}
+                        </span>
+                      </div>
+                    )}
+                    {siteSettings.bybitPayId && (
+                      <div>
+                        <span className="text-gray-500">Bybit Pay ID:</span>
+                        <span className="text-white font-semibold mr-2">
+                          {siteSettings.bybitPayId}
                         </span>
                       </div>
                     )}
@@ -342,8 +411,8 @@ export default function AdminSettingsPage() {
           <CardContent>
             <h3 className="text-lg font-bold mb-4">معلومات هامة</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li>• عند تغيير رقم Vodafone Cash، يظهر الرقم الجديد فوراً لكل العملاء</li>
-              <li>• عند تغيير Binance UID، يظهر الـ UID الجديد فوراً في صفحة البيع</li>
+              <li>• عند تغيير رقم Vodafone Cash أو InstaPay، يظهر الرقم الجديد فوراً لكل العملاء</li>
+              <li>• عند تغيير Binance UID أو Bybit Pay ID، يظهر فوراً في صفحة البيع</li>
               <li>• عند تحديث الأسعار، تُحدَّث تلقائياً في جميع الصفحات</li>
               <li>• كل تغيير يُسجَّل في سجل العمليات</li>
               <li>• تأكد من صحة أرقام الدفع قبل الحفظ لتجنب أخطاء التحويلات</li>

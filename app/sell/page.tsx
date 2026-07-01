@@ -10,12 +10,16 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
+type SellPaymentMethod = "BINANCE_PAY" | "BYBIT_PAY";
+
 export default function SellPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(50.0);
   const [adminBinanceUid, setAdminBinanceUid] = useState("");
+  const [bybitPayId, setBybitPayId] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<SellPaymentMethod>("BINANCE_PAY");
   const [copied, setCopied] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [orderData, setOrderData] = useState({
@@ -42,9 +46,15 @@ export default function SellPage() {
         if (data.binanceUid) {
           setAdminBinanceUid(data.binanceUid);
         }
+        if (data.bybitPayId) {
+          setBybitPayId(data.bybitPayId);
+        }
       })
       .catch(console.error);
   }, [session, router]);
+
+  const currentReceiveValue =
+    paymentMethod === "BINANCE_PAY" ? adminBinanceUid : bybitPayId;
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const amount = parseFloat(e.target.value) || 0;
@@ -53,8 +63,8 @@ export default function SellPage() {
   };
 
   const handleCopy = () => {
-    if (!adminBinanceUid) return;
-    navigator.clipboard.writeText(adminBinanceUid).then(() => {
+    if (!currentReceiveValue) return;
+    navigator.clipboard.writeText(currentReceiveValue).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -93,6 +103,7 @@ export default function SellPage() {
           binanceUid: orderData.receivingWallet,
           walletNumber: orderData.binanceUid,
           proofImageUrl,
+          paymentMethod,
         }),
       });
 
@@ -135,8 +146,39 @@ export default function SellPage() {
               <Card>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Payment Method Switcher */}
                     <FormGroup>
-                      <Label htmlFor="binanceUid">Binance UID الخاص بك</Label>
+                      <Label>طريقة إرسال USDT</Label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod("BINANCE_PAY")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            paymentMethod === "BINANCE_PAY"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          Binance UID
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod("BYBIT_PAY")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            paymentMethod === "BYBIT_PAY"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          Bybit Pay
+                        </button>
+                      </div>
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label htmlFor="binanceUid">
+                        {paymentMethod === "BINANCE_PAY" ? "Binance UID الخاص بك" : "Bybit Pay ID الخاص بك"}
+                      </Label>
                       <Input
                         id="binanceUid"
                         placeholder="123456789"
@@ -218,15 +260,44 @@ export default function SellPage() {
               <Card>
                 <CardContent>
                   <h3 className="font-bold mb-4">معلومات الاستقبال</h3>
+
+                  {/* Payment Method Switcher for receiving info */}
+                  <div className="flex gap-3 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("BINANCE_PAY")}
+                      className={`flex-1 py-2 rounded-lg border text-xs font-semibold transition-colors ${
+                        paymentMethod === "BINANCE_PAY"
+                          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                      }`}
+                    >
+                      Binance UID
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("BYBIT_PAY")}
+                      className={`flex-1 py-2 rounded-lg border text-xs font-semibold transition-colors ${
+                        paymentMethod === "BYBIT_PAY"
+                          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                      }`}
+                    >
+                      Bybit Pay
+                    </button>
+                  </div>
+
                   <div className="space-y-4">
                     <div>
                       <p className="text-gray-500 text-sm mb-2">
-                        Binance UID (للإدارة):
+                        {paymentMethod === "BINANCE_PAY"
+                          ? "Binance UID (للإدارة):"
+                          : "Bybit Pay ID (للإدارة):"}
                       </p>
-                      {adminBinanceUid ? (
+                      {currentReceiveValue ? (
                         <>
                           <p className="font-semibold text-lg select-all">
-                            {adminBinanceUid}
+                            {currentReceiveValue}
                           </p>
                           <button
                             type="button"
@@ -250,7 +321,11 @@ export default function SellPage() {
                 <CardContent>
                   <h3 className="font-bold mb-4">التعليمات</h3>
                   <ol className="space-y-2 text-sm text-gray-400 list-decimal list-inside">
-                    <li>أرسل USDT إلى Binance UID المعروض</li>
+                    <li>
+                      أرسل USDT إلى{" "}
+                      {paymentMethod === "BINANCE_PAY" ? "Binance UID" : "Bybit Pay ID"}{" "}
+                      المعروض
+                    </li>
                     <li>خذ لقطة شاشة للتحويل</li>
                     <li>سيتم التحقق من العملية</li>
                     <li>ستستقبل EGP في محفظتك</li>

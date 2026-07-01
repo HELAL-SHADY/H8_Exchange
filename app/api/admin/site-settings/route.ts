@@ -23,6 +23,8 @@ export async function GET() {
         data: {
           binanceUid: "",
           vodafoneCashNumber: "",
+          instapayNumber: "",
+          bybitPayId: "",
           telegramUsername: "",
           supportEmail: "",
           announcement: "",
@@ -54,6 +56,8 @@ export async function PUT(request: NextRequest) {
     const {
       binanceUid,
       vodafoneCashNumber,
+      instapayNumber,
+      bybitPayId,
       telegramUsername,
       supportEmail,
       announcement,
@@ -70,6 +74,8 @@ export async function PUT(request: NextRequest) {
         data: {
           ...(binanceUid !== undefined && { binanceUid }),
           ...(vodafoneCashNumber !== undefined && { vodafoneCashNumber }),
+          ...(instapayNumber !== undefined && { instapayNumber }),
+          ...(bybitPayId !== undefined && { bybitPayId }),
           ...(telegramUsername !== undefined && { telegramUsername }),
           ...(supportEmail !== undefined && { supportEmail }),
           ...(announcement !== undefined && { announcement }),
@@ -82,6 +88,8 @@ export async function PUT(request: NextRequest) {
         data: {
           binanceUid: binanceUid || "",
           vodafoneCashNumber: vodafoneCashNumber || "",
+          instapayNumber: instapayNumber || "",
+          bybitPayId: bybitPayId || "",
           telegramUsername: telegramUsername || "",
           supportEmail: supportEmail || "",
           announcement: announcement || "",

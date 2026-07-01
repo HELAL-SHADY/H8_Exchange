@@ -11,12 +11,16 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
+type BuyPaymentMethod = "VODAFONE_CASH" | "INSTAPAY";
+
 export default function BuyPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(51.0);
   const [vodafoneCashNumber, setVodafoneCashNumber] = useState("");
+  const [instapayNumber, setInstapayNumber] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<BuyPaymentMethod>("VODAFONE_CASH");
   const [copied, setCopied] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [orderData, setOrderData] = useState({
@@ -43,9 +47,15 @@ export default function BuyPage() {
         if (data.vodafoneCashNumber) {
           setVodafoneCashNumber(data.vodafoneCashNumber);
         }
+        if (data.instapayNumber) {
+          setInstapayNumber(data.instapayNumber);
+        }
       })
       .catch(console.error);
   }, [session, router]);
+
+  const currentPayValue =
+    paymentMethod === "VODAFONE_CASH" ? vodafoneCashNumber : instapayNumber;
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const amount = parseFloat(e.target.value) || 0;
@@ -54,8 +64,8 @@ export default function BuyPage() {
   };
 
   const handleCopy = () => {
-    if (!vodafoneCashNumber) return;
-    navigator.clipboard.writeText(vodafoneCashNumber).then(() => {
+    if (!currentPayValue) return;
+    navigator.clipboard.writeText(currentPayValue).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -94,6 +104,7 @@ export default function BuyPage() {
           binanceUid: orderData.binanceUid,
           walletNumber: orderData.walletNumber,
           proofImageUrl,
+          paymentMethod,
         }),
       });
 
@@ -136,6 +147,35 @@ export default function BuyPage() {
               <Card>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Payment Method Switcher */}
+                    <FormGroup>
+                      <Label>طريقة الدفع</Label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod("VODAFONE_CASH")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            paymentMethod === "VODAFONE_CASH"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          Vodafone Cash
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod("INSTAPAY")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            paymentMethod === "INSTAPAY"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          InstaPay
+                        </button>
+                      </div>
+                    </FormGroup>
+
                     <FormGroup>
                       <Label htmlFor="binanceUid">Binance UID</Label>
                       <Input
@@ -154,7 +194,9 @@ export default function BuyPage() {
 
                     <FormGroup>
                       <Label htmlFor="walletNumber">
-                        رقم محفظة Vodafone Cash المرسل منها
+                        {paymentMethod === "VODAFONE_CASH"
+                          ? "رقم محفظة Vodafone Cash المرسل منها"
+                          : "رقم الحساب / الهاتف المرسل منه InstaPay"}
                       </Label>
                       <Input
                         id="walletNumber"
@@ -225,17 +267,19 @@ export default function BuyPage() {
                         طريقة الدفع:
                       </p>
                       <p className="font-semibold text-[#F5B942]">
-                        Vodafone Cash
+                        {paymentMethod === "VODAFONE_CASH" ? "Vodafone Cash" : "InstaPay"}
                       </p>
                     </div>
                     <div>
                       <p className="text-gray-500 text-sm mb-2">
-                        رقم Vodafone Cash:
+                        {paymentMethod === "VODAFONE_CASH"
+                          ? "رقم Vodafone Cash:"
+                          : "رقم / رابط InstaPay:"}
                       </p>
-                      {vodafoneCashNumber ? (
+                      {currentPayValue ? (
                         <>
                           <p className="font-semibold text-lg select-all">
-                            {vodafoneCashNumber}
+                            {currentPayValue}
                           </p>
                           <button
                             type="button"
@@ -259,7 +303,13 @@ export default function BuyPage() {
                 <CardContent>
                   <h3 className="font-bold mb-4">التعليمات</h3>
                   <ol className="space-y-2 text-sm text-gray-400 list-decimal list-inside">
-                    <li>أرسل المبلغ بالجنيه إلى رقم Vodafone Cash</li>
+                    <li>
+                      أرسل المبلغ بالجنيه إلى{" "}
+                      {paymentMethod === "VODAFONE_CASH"
+                        ? "رقم Vodafone Cash"
+                        : "رقم InstaPay"}{" "}
+                      الموضح بالأعلى
+                    </li>
                     <li>خذ لقطة شاشة للحوالة</li>
                     <li>سيتم التحقق من الحوالة من قبل الإدارة</li>
                     <li>سيتم إرسال USDT إلى محفظتك</li>
