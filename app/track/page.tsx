@@ -54,7 +54,6 @@ export default function TrackPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Review states
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -141,9 +140,7 @@ export default function TrackPage() {
             className="text-center mb-12"
           >
             <h1 className="text-4xl font-bold mb-4">تتبع الطلب</h1>
-            <p className="text-gray-400">
-              أدخل رقم الطلب لتتبع حالة عمليتك
-            </p>
+            <p className="text-gray-400">أدخل رقم الطلب لتتبع حالة عمليتك</p>
           </motion.div>
 
           <motion.div
@@ -205,8 +202,7 @@ export default function TrackPage() {
                     <div>
                       <p className="text-gray-500 text-sm mb-1">المبلغ</p>
                       <p className="font-semibold text-lg">
-                        {order.amount}{" "}
-                        {order.type === "BUY" ? "EGP" : "USDT"}
+                        {order.amount} {order.type === "BUY" ? "EGP" : "USDT"}
                       </p>
                     </div>
                     <div>
@@ -257,12 +253,8 @@ export default function TrackPage() {
 
                   {order.status === "REJECTED" ? (
                     <div className="p-4 bg-red-600/20 border border-red-600 rounded-lg">
-                      <p className="text-red-400 font-semibold">
-                        ✗ تم رفض الطلب
-                      </p>
-                      <p className="text-red-300 text-sm mt-2">
-                        يرجى تقديم طلب جديد
-                      </p>
+                      <p className="text-red-400 font-semibold">تم رفض الطلب</p>
+                      <p className="text-red-300 text-sm mt-2">يرجى تقديم طلب جديد</p>
                     </div>
                   ) : (
                     <div className="space-y-6">
@@ -271,7 +263,8 @@ export default function TrackPage() {
                           step: 1,
                           title: "قيد المراجعة",
                           date: order.createdAt,
-                          completed: StatusSteps[order.status as keyof typeof StatusSteps] >= 1,
+                          completed:
+                            StatusSteps[order.status as keyof typeof StatusSteps] >= 1,
                         },
                         {
                           step: 2,
@@ -295,10 +288,7 @@ export default function TrackPage() {
                             StatusSteps[order.status as keyof typeof StatusSteps] >= 4,
                         },
                       ].map((step) => (
-                        <div
-                          key={step.step}
-                          className="flex gap-4 items-start relative"
-                        >
+                        <div key={step.step} className="flex gap-4 items-start relative">
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 ${
                               step.completed
@@ -311,18 +301,14 @@ export default function TrackPage() {
                           <div className="flex-1">
                             <p
                               className={`font-semibold ${
-                                step.completed
-                                  ? "text-white"
-                                  : "text-gray-500"
+                                step.completed ? "text-white" : "text-gray-500"
                               }`}
                             >
                               {step.title}
                             </p>
                             {step.date && (
                               <p className="text-sm text-gray-500 mt-1">
-                                {new Date(step.date).toLocaleString(
-                                  "ar-EG"
-                                )}
+                                {new Date(step.date).toLocaleString("ar-EG")}
                               </p>
                             )}
                           </div>
@@ -340,19 +326,24 @@ export default function TrackPage() {
                     <h3 className="font-bold text-lg mb-2">تقييم الخدمة</h3>
                     {reviewSuccess ? (
                       <div className="p-4 bg-green-950/30 border border-green-800 rounded-lg text-green-400">
-                        ✓ تم تسجيل تقييمك بنجاح! شكرًا لك على مشاركتنا رأيك.
+                        تم تسجيل تقييمك بنجاح! شكرًا لك على مشاركتنا رأيك.
                       </div>
                     ) : (
                       <div className="space-y-4">
                         <p className="text-gray-400 text-sm">
                           شاركنا رأيك حول هذه العملية لمساعدتنا في تحسين خدماتنا:
                         </p>
-                        
+
                         {!session ? (
                           <div className="p-4 bg-[#1A1A1A] rounded-lg border border-[#2D2D2D] text-center">
-                            <p className="text-gray-400 text-sm mb-3">يجب عليك تسجيل الدخول لإضافة تقييم.</p>
+                            <p className="text-gray-400 text-sm mb-3">
+                              يجب عليك تسجيل الدخول لإضافة تقييم.
+                            </p>
                             
-                              href={`/auth/login?callbackUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                            <a
+                              href={`/auth/login?callbackUrl=${encodeURIComponent(
+                                typeof window !== "undefined" ? window.location.href : ""
+                              )}`}
                               className="inline-block px-4 py-2 bg-[#F5B942] text-[#0A0A0A] rounded-lg font-semibold hover:shadow-lg hover:shadow-[#F5B942]/50 transition-all text-sm"
                             >
                               تسجيل الدخول
@@ -361,7 +352,9 @@ export default function TrackPage() {
                         ) : (
                           <form onSubmit={handleReviewSubmit} className="space-y-4">
                             <div>
-                              <label className="block text-sm text-gray-400 mb-2">التقييم بالنجوم</label>
+                              <label className="block text-sm text-gray-400 mb-2">
+                                التقييم بالنجوم
+                              </label>
                               <div className="flex gap-2">
                                 {[1, 2, 3, 4, 5].map((star) => (
                                   <button
@@ -382,9 +375,12 @@ export default function TrackPage() {
                                 ))}
                               </div>
                             </div>
-                            
+
                             <div>
-                              <label htmlFor="reviewComment" className="block text-sm text-gray-400 mb-2">
+                              <label
+                                htmlFor="reviewComment"
+                                className="block text-sm text-gray-400 mb-2"
+                              >
                                 تعليقك (اختياري)
                               </label>
                               <textarea
@@ -424,6 +420,7 @@ export default function TrackPage() {
                     تواصل معنا عبر Telegram للحصول على الدعم الفوري
                   </p>
                   
+                  <a
                     href="https://t.me/HELAL_SHADY"
                     target="_blank"
                     rel="noopener noreferrer"

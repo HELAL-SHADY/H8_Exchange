@@ -61,38 +61,39 @@ export default function AdminOrdersPage() {
   };
 
   const handleOrderAction = async (
-  orderId: string,
-  action: "APPROVE" | "REJECT" | "COMPLETE"
-) => {
-  setActionLoading(orderId);
+    orderId: string,
+    action: "APPROVE" | "REJECT" | "COMPLETE"
+  ) => {
+    setActionLoading(orderId);
 
-  try {
-    const response = await fetch(`/api/admin/orders/${orderId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action,
-        adminNote: "",
-      }),
-    });
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action,
+          adminNote: "",
+        }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok) {
-      alert("تم تحديث الطلب بنجاح");
-      fetchOrders();
-    } else {
-      alert(data.error || "فشل تحديث الطلب");
+      if (response.ok) {
+        alert("تم تحديث الطلب بنجاح");
+        fetchOrders();
+      } else {
+        alert(data.error || "فشل تحديث الطلب");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("حدث خطأ");
+    } finally {
+      setActionLoading(null);
     }
-  } catch (error) {
-    console.error(error);
-    alert("حدث خطأ");
-  } finally {
-    setActionLoading(null);
-  }
-};
+  };
+
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
@@ -135,10 +136,7 @@ export default function AdminOrdersPage() {
 
               <FormGroup>
                 <Label>&nbsp;</Label>
-                <SecondaryButton
-                  onClick={fetchOrders}
-                  className="w-full"
-                >
+                <SecondaryButton onClick={fetchOrders} className="w-full">
                   تحديث
                 </SecondaryButton>
               </FormGroup>
@@ -168,9 +166,7 @@ export default function AdminOrdersPage() {
               <Card
                 className="cursor-pointer hover:border-[#F5B942] transition-colors"
                 onClick={() =>
-                  setExpandedOrder(
-                    expandedOrder === order.id ? null : order.id
-                  )
+                  setExpandedOrder(expandedOrder === order.id ? null : order.id)
                 }
               >
                 <CardContent className="py-4">
@@ -202,11 +198,7 @@ export default function AdminOrdersPage() {
                       </p>
                     </div>
                     <div>
-                      {expandedOrder === order.id ? (
-                        <ChevronUp />
-                      ) : (
-                        <ChevronDown />
-                      )}
+                      {expandedOrder === order.id ? <ChevronUp /> : <ChevronDown />}
                     </div>
                   </div>
 
@@ -224,7 +216,9 @@ export default function AdminOrdersPage() {
                         </div>
                         <div>
                           <p className="text-gray-500 text-sm">
-                            {order.type === "BUY" ? "Binance/Bybit ID الخاص بالعميل" : "Binance/Bybit UID"}
+                            {order.type === "BUY"
+                              ? "Binance/Bybit ID الخاص بالعميل"
+                              : "Binance/Bybit UID"}
                           </p>
                           <p className="font-semibold">{order.binanceUid}</p>
                         </div>
@@ -261,8 +255,13 @@ export default function AdminOrdersPage() {
                       </div>
 
                       {order.proofImageUrl && (
-                        <div className="mt-4 p-4 bg-[#1A1A1A] rounded-lg border border-[#2D2D2D]" onClick={(e) => e.stopPropagation()}>
-                          <p className="text-[#F5B942] font-semibold mb-2">📷 إثبات التحويل (Screenshot):</p>
+                        <div
+                          className="mt-4 p-4 bg-[#1A1A1A] rounded-lg border border-[#2D2D2D]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <p className="text-[#F5B942] font-semibold mb-2">
+                            📷 إثبات التحويل (Screenshot):
+                          </p>
                           <div className="relative max-w-md overflow-hidden rounded border border-[#3D3D3D] mb-2 bg-[#0F0F0F]">
                             <img
                               src={order.proofImageUrl}
@@ -272,17 +271,13 @@ export default function AdminOrdersPage() {
                             />
                           </div>
                           
+                          <a
                             href={order.proofImageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-block text-sm text-[#F5B942] hover:underline"
                           >
-                           href={order.proofImageUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-block text-sm text-[#F5B942] hover:underline"
-                          >
-                            فتح الصورة في علامة تبويب جديدة
+                            فتح الصورة في تبويب جديد
                           </a>
                         </div>
                       )}
@@ -291,18 +286,14 @@ export default function AdminOrdersPage() {
                       {order.status === "PENDING_REVIEW" && (
                         <div className="flex gap-3 pt-4 border-t border-[#2D2D2D]">
                           <PrimaryButton
-                            onClick={() =>
-                              handleOrderAction(order.id, "APPROVE")
-                            }
+                            onClick={() => handleOrderAction(order.id, "APPROVE")}
                             disabled={actionLoading === order.id}
                             className="flex-1"
                           >
                             قبول
                           </PrimaryButton>
                           <DangerButton
-                            onClick={() =>
-                              handleOrderAction(order.id, "REJECT")
-                            }
+                            onClick={() => handleOrderAction(order.id, "REJECT")}
                             disabled={actionLoading === order.id}
                             className="flex-1"
                           >
@@ -313,9 +304,7 @@ export default function AdminOrdersPage() {
 
                       {order.status === "APPROVED" && (
                         <PrimaryButton
-                          onClick={() =>
-                            handleOrderAction(order.id, "COMPLETE")
-                          }
+                          onClick={() => handleOrderAction(order.id, "COMPLETE")}
                           disabled={actionLoading === order.id}
                           className="w-full mt-4"
                         >
