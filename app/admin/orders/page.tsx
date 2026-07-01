@@ -277,7 +277,12 @@ export default function AdminOrdersPage() {
                             rel="noopener noreferrer"
                             className="inline-block text-sm text-[#F5B942] hover:underline"
                           >
-                            فتح الصورة في علامة تبويب جديدة ↗
+                           href={order.proofImageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block text-sm text-[#F5B942] hover:underline"
+                          >
+                            فتح الصورة في علامة تبويب جديدة
                           </a>
                         </div>
                       )}
