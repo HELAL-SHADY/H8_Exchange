@@ -296,73 +296,53 @@ export default function SellPage() {
               className="space-y-6"
             >
               <Card>
-                <CardContent>
-                  <h3 className="font-bold mb-4">معلومات الاستقبال</h3>
-
-                  {/* Payment Method Switcher for receiving info */}
-                  <div className="flex gap-3 mb-4">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("BINANCE_PAY")}
-                      className={`flex-1 py-2 rounded-lg border text-xs font-semibold transition-colors ${
-                        paymentMethod === "BINANCE_PAY"
-                          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-                          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
-                      }`}
-                    >
-                      Binance UID
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("BYBIT_PAY")}
-                      className={`flex-1 py-2 rounded-lg border text-xs font-semibold transition-colors ${
-                        paymentMethod === "BYBIT_PAY"
-                          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-                          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
-                      }`}
-                    >
-                      Bybit Pay
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-gray-500 text-sm mb-2">
-                        {paymentMethod === "BINANCE_PAY"
-                          ? "Binance UID (للإدارة):"
-                          : "Bybit Pay ID (للإدارة):"}
-                      </p>
-                      {currentReceiveValue ? (
-                        <>
-                          <p className="font-semibold text-lg select-all">
-                            {currentReceiveValue}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={handleCopy}
-                            className="text-xs text-[#F5B942] hover:underline mt-2 transition-opacity"
-                          >
-                            {copied ? "✅ تم النسخ!" : "انسخ الرقم"}
-                          </button>
-                        </>
-                      ) : (
-                        <p className="text-gray-600 text-sm italic">
-                          جاري التحميل...
-                        </p>
-                      )}
-                    </div>
-                    <div className="pt-4 border-t border-[#2D2D2D]">
-                      <p className="text-gray-500 text-sm mb-2">
-                        ستستلم EGP عبر:
-                      </p>
-                      <p className="font-semibold text-[#F5B942]">
-                        {receiveMethod === "VODAFONE_CASH" ? "Vodafone Cash" : "InstaPay"}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
+  <CardContent>
+    <h3 className="font-bold mb-4">معلومات الاستقبال</h3>
+    <div className="space-y-4">
+      <div>
+        <p className="text-gray-500 text-sm mb-2">
+          طريقة إرسال USDT:
+        </p>
+        <p className="font-semibold text-[#F5B942]">
+          {paymentMethod === "BINANCE_PAY" ? "Binance UID" : "Bybit Pay"}
+        </p>
+      </div>
+      <div>
+        <p className="text-gray-500 text-sm mb-2">
+          {paymentMethod === "BINANCE_PAY"
+            ? "Binance UID (للإدارة):"
+            : "Bybit Pay ID (للإدارة):"}
+        </p>
+        {currentReceiveValue ? (
+          <>
+            <p className="font-semibold text-lg select-all">
+              {currentReceiveValue}
+            </p>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="text-xs text-[#F5B942] hover:underline mt-2 transition-opacity"
+            >
+              {copied ? "✅ تم النسخ!" : "انسخ الرقم"}
+            </button>
+          </>
+        ) : (
+          <p className="text-gray-600 text-sm italic">
+            جاري التحميل...
+          </p>
+        )}
+      </div>
+      <div className="pt-4 border-t border-[#2D2D2D]">
+        <p className="text-gray-500 text-sm mb-2">
+          ستستلم EGP عبر:
+        </p>
+        <p className="font-semibold text-[#F5B942]">
+          {receiveMethod === "VODAFONE_CASH" ? "Vodafone Cash" : "InstaPay"}
+        </p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
               <Card>
                 <CardContent>
                   <h3 className="font-bold mb-4">التعليمات</h3>
