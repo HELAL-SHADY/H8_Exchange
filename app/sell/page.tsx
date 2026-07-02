@@ -150,104 +150,104 @@ export default function SellPage() {
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Payment Method Switcher */}
-                    <FormGroup>
-                      <Label>طريقة إرسال USDT</Label>
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod("BINANCE_PAY")}
-                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                            paymentMethod === "BINANCE_PAY"
-                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
-                          }`}
-                        >
-                          Binance UID
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod("BYBIT_PAY")}
-                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                            paymentMethod === "BYBIT_PAY"
-                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
-                          }`}
-                        >
-                          Bybit Pay
-                        </button>
-                      </div>
-                    </FormGroup>
+<FormGroup>
+  <Label>طريقة إرسال USDT</Label>
+  <div className="flex gap-3">
+    <button
+      type="button"
+      onClick={() => setPaymentMethod("BINANCE_PAY")}
+      className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+        paymentMethod === "BINANCE_PAY"
+          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+      }`}
+    >
+      Binance UID
+    </button>
+    <button
+      type="button"
+      onClick={() => setPaymentMethod("BYBIT_PAY")}
+      className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+        paymentMethod === "BYBIT_PAY"
+          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+      }`}
+    >
+      Bybit Pay
+    </button>
+  </div>
+</FormGroup>
 
-                    <FormGroup>
-                      <Label htmlFor="binanceUid">
-                        {paymentMethod === "BINANCE_PAY" ? "Binance UID الخاص بك" : "Bybit Pay ID الخاص بك"}
-                      </Label>
-                      <Input
-                        id="binanceUid"
-                        placeholder="123456789"
-                        value={orderData.binanceUid}
-                        onChange={(e) =>
-                          setOrderData({
-                            ...orderData,
-                            binanceUid: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </FormGroup>
+{/* Receive Method Switcher */}
+<FormGroup>
+  <Label>طريقة استلام EGP</Label>
+  <div className="flex gap-3">
+    <button
+      type="button"
+      onClick={() => setReceiveMethod("VODAFONE_CASH")}
+      className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+        receiveMethod === "VODAFONE_CASH"
+          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+      }`}
+    >
+      Vodafone Cash
+    </button>
+    <button
+      type="button"
+      onClick={() => setReceiveMethod("INSTAPAY")}
+      className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+        receiveMethod === "INSTAPAY"
+          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+      }`}
+    >
+      InstaPay
+    </button>
+  </div>
+</FormGroup>
 
-                    {/* Receive Method Switcher */}
-                    <FormGroup>
-                      <Label>طريقة استلام EGP</Label>
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setReceiveMethod("VODAFONE_CASH")}
-                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                            receiveMethod === "VODAFONE_CASH"
-                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
-                          }`}
-                        >
-                          Vodafone Cash
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setReceiveMethod("INSTAPAY")}
-                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                            receiveMethod === "INSTAPAY"
-                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
-                          }`}
-                        >
-                          InstaPay
-                        </button>
-                      </div>
-                    </FormGroup>
+<FormGroup>
+  <Label htmlFor="binanceUid">
+    {paymentMethod === "BINANCE_PAY" ? "Binance UID الخاص بك" : "Bybit Pay ID الخاص بك"}
+  </Label>
+  <Input
+    id="binanceUid"
+    placeholder="123456789"
+    value={orderData.binanceUid}
+    onChange={(e) =>
+      setOrderData({
+        ...orderData,
+        binanceUid: e.target.value,
+      })
+    }
+    required
+  />
+</FormGroup>
 
-                    <FormGroup>
-                      <Label htmlFor="receivingWallet">
-                        {receiveMethod === "VODAFONE_CASH"
-                          ? "محفظة الاستقبال (Vodafone Cash)"
-                          : "رقم / رابط InstaPay للاستقبال"}
-                      </Label>
-                      <Input
-                        id="receivingWallet"
-                        placeholder={
-                          receiveMethod === "VODAFONE_CASH"
-                            ? "201000000000"
-                            : "201000000000 أو yourname@instapay"
-                        }
-                        value={orderData.receivingWallet}
-                        onChange={(e) =>
-                          setOrderData({
-                            ...orderData,
-                            receivingWallet: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </FormGroup>
+<FormGroup>
+  <Label htmlFor="receivingWallet">
+    {receiveMethod === "VODAFONE_CASH"
+      ? "محفظة الاستقبال (Vodafone Cash)"
+      : "رقم / رابط InstaPay للاستقبال"}
+  </Label>
+  <Input
+    id="receivingWallet"
+    placeholder={
+      receiveMethod === "VODAFONE_CASH"
+        ? "201000000000"
+        : "201000000000 أو yourname@instapay"
+    }
+    value={orderData.receivingWallet}
+    onChange={(e) =>
+      setOrderData({
+        ...orderData,
+        receivingWallet: e.target.value,
+      })
+    }
+    required
+  />
+</FormGroup>
 
                     <FormGroup>
                       <Label htmlFor="amountUsdt">مبلغ USDT</Label>
