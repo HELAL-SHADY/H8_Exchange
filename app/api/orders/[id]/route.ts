@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { sendOrderStatusNotification } from "@/lib/telegram";
+import { sendOrderStatusNotification, sendNewOrderNotification } from "@/lib/telegram";
 
 export async function GET(
   request: NextRequest,
@@ -75,7 +75,9 @@ export async function PATCH(
 
     // Send Telegram Notification if status or proof changed
     try {
-      if (order.status !== existingOrder.status || order.proofImageUrl !== existingOrder.proofImageUrl) {
+      if (existingOrder.status === "PENDING_PAYMENT" && order.status === "PENDING_REVIEW") {
+        await sendNewOrderNotification(order);
+      } else if (order.status !== existingOrder.status || order.proofImageUrl !== existingOrder.proofImageUrl) {
         await sendOrderStatusNotification(order, existingOrder.status);
       }
     } catch (telegramError) {

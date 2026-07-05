@@ -247,6 +247,7 @@ enum OrderType {
 }
 
 enum OrderStatus {
+  PENDING_PAYMENT
   PENDING_REVIEW
   UNDER_VERIFICATION
   APPROVED

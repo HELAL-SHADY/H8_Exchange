@@ -9,6 +9,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "@/lib/i18n";
 
 type SellPaymentMethod = "BINANCE_PAY" | "BYBIT_PAY";
 type SellReceiveMethod = "VODAFONE_CASH" | "INSTAPAY";
@@ -16,14 +17,11 @@ type SellReceiveMethod = "VODAFONE_CASH" | "INSTAPAY";
 export default function SellPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { t, locale } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(50.0);
-  const [adminBinanceUid, setAdminBinanceUid] = useState("");
-  const [bybitPayId, setBybitPayId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<SellPaymentMethod>("BINANCE_PAY");
   const [receiveMethod, setReceiveMethod] = useState<SellReceiveMethod>("VODAFONE_CASH");
-  const [copied, setCopied] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
   const [orderData, setOrderData] = useState({
     binanceUid: "",
     receivingWallet: "",
@@ -41,22 +39,7 @@ export default function SellPage() {
       .then((res) => res.json())
       .then((data) => setExchangeRate(data.sellRate))
       .catch(console.error);
-
-    fetch("/api/admin/site-settings")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.binanceUid) {
-          setAdminBinanceUid(data.binanceUid);
-        }
-        if (data.bybitPayId) {
-          setBybitPayId(data.bybitPayId);
-        }
-      })
-      .catch(console.error);
   }, [session, router]);
-
-  const currentReceiveValue =
-    paymentMethod === "BINANCE_PAY" ? adminBinanceUid : bybitPayId;
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const amount = parseFloat(e.target.value) || 0;
@@ -64,38 +47,11 @@ export default function SellPage() {
     setAmountEgp(Math.round(amount * exchangeRate * 100) / 100);
   };
 
-  const handleCopy = () => {
-    if (!currentReceiveValue) return;
-    navigator.clipboard.writeText(currentReceiveValue).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
-      alert("الرجاء تحميل إثبات التحويل (صورة التحويل)");
-      return;
-    }
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const uploadData = await uploadResponse.json();
-      if (!uploadResponse.ok) {
-        throw new Error(uploadData.error || "فشل رفع صورة الإثبات");
-      }
-
-      const proofImageUrl = uploadData.url;
-
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,7 +60,6 @@ export default function SellPage() {
           amount: parseFloat(orderData.amountUsdt),
           binanceUid: orderData.receivingWallet,
           walletNumber: orderData.binanceUid,
-          proofImageUrl,
           paymentMethod,
           receiveMethod,
         }),
@@ -113,10 +68,10 @@ export default function SellPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to create order");
 
-      alert("تم إنشاء الطلب بنجاح!");
+      alert(locale === "ar" ? "تم إنشاء الطلب بنجاح! يرجى إتمام عملية الدفع." : "Order created successfully! Please complete the payment.");
       router.push(`/track?orderId=${data.id}`);
     } catch (error) {
-      alert("حدث خطأ: " + (error as Error).message);
+      alert((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -134,9 +89,9 @@ export default function SellPage() {
             className="text-center mb-8 sm:mb-12"
           >
             <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-              بيع <span className="text-[#F5B942]">USDT</span>
+              {t("sellUsdtTitle")} <span className="text-[#F5B942]">USDT</span>
             </h1>
-            <p className="text-gray-400">ابدأ عملية البيع الآن</p>
+            <p className="text-gray-400">{t("startSellNow")}</p>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -150,107 +105,109 @@ export default function SellPage() {
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Payment Method Switcher */}
-<FormGroup>
-  <Label>طريقة إرسال USDT</Label>
-  <div className="flex gap-3">
-    <button
-      type="button"
-      onClick={() => setPaymentMethod("BINANCE_PAY")}
-      className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-        paymentMethod === "BINANCE_PAY"
-          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
-      }`}
-    >
-      Binance UID
-    </button>
-    <button
-      type="button"
-      onClick={() => setPaymentMethod("BYBIT_PAY")}
-      className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-        paymentMethod === "BYBIT_PAY"
-          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
-      }`}
-    >
-      Bybit Pay
-    </button>
-  </div>
-</FormGroup>
+                    <FormGroup>
+                      <Label>{t("paymentMethodSell")}</Label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod("BINANCE_PAY")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            paymentMethod === "BINANCE_PAY"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          Binance UID
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod("BYBIT_PAY")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            paymentMethod === "BYBIT_PAY"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          Bybit Pay
+                        </button>
+                      </div>
+                    </FormGroup>
 
-{/* Receive Method Switcher */}
-<FormGroup>
-  <Label>طريقة استلام EGP</Label>
-  <div className="flex gap-3">
-    <button
-      type="button"
-      onClick={() => setReceiveMethod("VODAFONE_CASH")}
-      className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-        receiveMethod === "VODAFONE_CASH"
-          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
-      }`}
-    >
-      Vodafone Cash
-    </button>
-    <button
-      type="button"
-      onClick={() => setReceiveMethod("INSTAPAY")}
-      className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-        receiveMethod === "INSTAPAY"
-          ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-          : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
-      }`}
-    >
-      InstaPay
-    </button>
-  </div>
-</FormGroup>
-
-<FormGroup>
-  <Label htmlFor="binanceUid">
-    {paymentMethod === "BINANCE_PAY" ? "Binance UID الخاص بك" : "Bybit Pay ID الخاص بك"}
-  </Label>
-  <Input
-    id="binanceUid"
-    placeholder="123456789"
-    value={orderData.binanceUid}
-    onChange={(e) =>
-      setOrderData({
-        ...orderData,
-        binanceUid: e.target.value,
-      })
-    }
-    required
-  />
-</FormGroup>
-
-<FormGroup>
-  <Label htmlFor="receivingWallet">
-    {receiveMethod === "VODAFONE_CASH"
-      ? "محفظة الاستقبال (Vodafone Cash)"
-      : "رقم / رابط InstaPay للاستقبال"}
-  </Label>
-  <Input
-    id="receivingWallet"
-    placeholder={
-      receiveMethod === "VODAFONE_CASH"
-        ? "201000000000"
-        : "201000000000 أو yourname@instapay"
-    }
-    value={orderData.receivingWallet}
-    onChange={(e) =>
-      setOrderData({
-        ...orderData,
-        receivingWallet: e.target.value,
-      })
-    }
-    required
-  />
-</FormGroup>
+                    {/* Receive Method Switcher */}
+                    <FormGroup>
+                      <Label>{t("receiveMethodSell")}</Label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setReceiveMethod("VODAFONE_CASH")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            receiveMethod === "VODAFONE_CASH"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          Vodafone Cash
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReceiveMethod("INSTAPAY")}
+                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                            receiveMethod === "INSTAPAY"
+                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
+                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                          }`}
+                        >
+                          InstaPay
+                        </button>
+                      </div>
+                    </FormGroup>
 
                     <FormGroup>
-                      <Label htmlFor="amountUsdt">مبلغ USDT</Label>
+                      <Label htmlFor="binanceUid">
+                        {paymentMethod === "BINANCE_PAY"
+                          ? t("binanceUidLabelSell")
+                          : t("bybitUidLabelSell")}
+                      </Label>
+                      <Input
+                        id="binanceUid"
+                        placeholder="123456789"
+                        value={orderData.binanceUid}
+                        onChange={(e) =>
+                          setOrderData({
+                            ...orderData,
+                            binanceUid: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label htmlFor="receivingWallet">
+                        {receiveMethod === "VODAFONE_CASH"
+                          ? t("receivingWalletLabel")
+                          : t("receivingInstapayLabel")}
+                      </Label>
+                      <Input
+                        id="receivingWallet"
+                        placeholder={
+                          receiveMethod === "VODAFONE_CASH"
+                            ? "201000000000"
+                            : "201000000000 or username@instapay"
+                        }
+                        value={orderData.receivingWallet}
+                        onChange={(e) =>
+                          setOrderData({
+                            ...orderData,
+                            receivingWallet: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label htmlFor="amountUsdt">{t("amountUsdtLabel")}</Label>
                       <Input
                         id="amountUsdt"
                         type="number"
@@ -260,21 +217,8 @@ export default function SellPage() {
                         required
                       />
                       <p className="text-sm text-[#F5B942] mt-2">
-                        ستستقبل: {amountEgp} EGP
+                        {t("willReceive")}: {amountEgp} EGP
                       </p>
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="proofImage">إثبات التحويل (صورة الشاشة إجباري)</Label>
-                      <input
-                        id="proofImage"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setFile(e.target.files?.[0] || null)}
-                        required
-                        className="w-full px-4 py-3 rounded-lg bg-[#2D2D2D] border border-[#3D3D3D] text-white focus:outline-none focus:border-[#F5B942] transition-colors duration-300 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-[#F5B942] file:text-[#0A0A0A] file:font-semibold hover:file:opacity-90 cursor-pointer text-sm"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">يرجى رفع لقطة شاشة واضحة لإثبات التحويل لتسريع عملية المراجعة.</p>
                     </FormGroup>
 
                     <PrimaryButton
@@ -282,121 +226,44 @@ export default function SellPage() {
                       className="w-full"
                       disabled={loading}
                     >
-                      {loading ? "جاري المعالجة..." : "إنشاء الطلب"}
+                      {loading ? t("processing") : t("createOrderBtn")}
                     </PrimaryButton>
                   </form>
                 </CardContent>
               </Card>
             </motion.div>
 
-            {/* Info Sidebar */}
+            {/* Sidebar */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="space-y-6"
             >
               <Card>
-  <CardContent>
-    <h3 className="font-bold mb-4">معلومات الاستقبال</h3>
-    <div className="space-y-4">
-      <div>
-        <p className="text-gray-500 text-sm mb-2">
-          طريقة إرسال USDT:
-        </p>
-        <p className="font-semibold text-[#F5B942]">
-          {paymentMethod === "BINANCE_PAY" ? "Binance UID" : "Bybit Pay"}
-        </p>
-      </div>
-      <div>
-        <p className="text-gray-500 text-sm mb-2">
-          {paymentMethod === "BINANCE_PAY"
-            ? "Binance UID (للإدارة):"
-            : "Bybit Pay ID (للإدارة):"}
-        </p>
-        {currentReceiveValue ? (
-          <>
-            <p className="font-semibold text-lg select-all">
-              {currentReceiveValue}
-            </p>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="text-xs text-[#F5B942] hover:underline mt-2 transition-opacity"
-            >
-              {copied ? "✅ تم النسخ!" : "انسخ الرقم"}
-            </button>
-          </>
-        ) : (
-          <p className="text-gray-600 text-sm italic">
-            جاري التحميل...
-          </p>
-        )}
-      </div>
-      <div className="pt-4 border-t border-[#2D2D2D]">
-        <p className="text-gray-500 text-sm mb-2">
-          ستستلم EGP عبر:
-        </p>
-        <p className="font-semibold text-[#F5B942]">
-          {receiveMethod === "VODAFONE_CASH" ? "Vodafone Cash" : "InstaPay"}
-        </p>
-      </div>
-    </div>
-  </CardContent>
-</Card>
-              <Card>
                 <CardContent>
-                  <h3 className="font-bold mb-4">التعليمات</h3>
-                  <ol className="space-y-2 text-sm text-gray-400 list-decimal list-inside">
-                    <li>
-                      أرسل USDT إلى{" "}
-                      {paymentMethod === "BINANCE_PAY" ? "Binance UID" : "Bybit Pay ID"}{" "}
-                      المعروض
-                    </li>
-                    <li>خذ لقطة شاشة للتحويل</li>
-                    <li>سيتم التحقق من العملية</li>
-                    <li>
-                      ستستقبل EGP عبر{" "}
-                      {receiveMethod === "VODAFONE_CASH" ? "Vodafone Cash" : "InstaPay"}{" "}
-                      في محفظتك
-                    </li>
-                  </ol>
+                  <h3 className="font-bold mb-4">{t("currentPrice")}</h3>
+                  <div className="text-center py-4">
+                    <p className="text-gray-400 text-sm mb-2">{t("sellRate")}</p>
+                    <p className="text-3xl font-bold text-[#F5B942]">
+                      {exchangeRate}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2">{t("egpPerUsdt")}</p>
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent>
-                  <h3 className="font-bold mb-4">السعر الحالي</h3>
-                  <div className="text-center py-4">
-                    <p className="text-gray-500 text-sm mb-2">سعر البيع</p>
-                    <p className="text-3xl font-bold text-[#F5B942]">
-                      {exchangeRate}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">EGP per USDT</p>
-                  </div>
+                  <h3 className="font-bold mb-4">{t("importantNotes")}</h3>
+                  <ul className="space-y-2 text-sm text-gray-400 list-disc list-inside">
+                    {(t("sellNotes") as string[]).map((note, idx) => (
+                      <li key={idx}>{note}</li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             </motion.div>
           </div>
-
-          {/* Additional Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-8 sm:mt-12 max-w-2xl"
-          >
-            <Card>
-              <CardContent>
-                <h3 className="text-lg font-bold mb-4">ملاحظات مهمة</h3>
-                <ul className="space-y-2 text-sm text-gray-400">
-                  <li>• تأكد من صحة البيانات المدخلة</li>
-                  <li>• احتفظ بلقطة شاشة التحويل</li>
-                  <li>• سيتم التحقق من الطلب خلال 30 دقيقة</li>
-                  <li>• تواصل معنا عبر Telegram للدعم</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </motion.div>
         </div>
       </section>
 

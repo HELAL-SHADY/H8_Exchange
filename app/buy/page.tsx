@@ -9,7 +9,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { useTranslation } from "@/lib/i18n";
 
 type BuyPaymentMethod = "VODAFONE_CASH" | "INSTAPAY";
 type BuyReceiveMethod = "BINANCE_PAY" | "BYBIT_PAY";
@@ -17,14 +17,11 @@ type BuyReceiveMethod = "BINANCE_PAY" | "BYBIT_PAY";
 export default function BuyPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { t, locale } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(51.0);
-  const [vodafoneCashNumber, setVodafoneCashNumber] = useState("");
-  const [instapayNumber, setInstapayNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<BuyPaymentMethod>("VODAFONE_CASH");
   const [receiveMethod, setReceiveMethod] = useState<BuyReceiveMethod>("BINANCE_PAY");
-  const [copied, setCopied] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
   const [orderData, setOrderData] = useState({
     binanceUid: "",
     walletNumber: "",
@@ -42,22 +39,7 @@ export default function BuyPage() {
       .then((res) => res.json())
       .then((data) => setExchangeRate(data.buyRate))
       .catch(console.error);
-
-    fetch("/api/admin/site-settings")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.vodafoneCashNumber) {
-          setVodafoneCashNumber(data.vodafoneCashNumber);
-        }
-        if (data.instapayNumber) {
-          setInstapayNumber(data.instapayNumber);
-        }
-      })
-      .catch(console.error);
   }, [session, router]);
-
-  const currentPayValue =
-    paymentMethod === "VODAFONE_CASH" ? vodafoneCashNumber : instapayNumber;
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const amount = parseFloat(e.target.value) || 0;
@@ -65,38 +47,11 @@ export default function BuyPage() {
     setAmountUsdt(Math.round((amount / exchangeRate) * 100) / 100);
   };
 
-  const handleCopy = () => {
-    if (!currentPayValue) return;
-    navigator.clipboard.writeText(currentPayValue).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
-      alert("الرجاء تحميل إثبات الدفع (صورة التحويل)");
-      return;
-    }
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const uploadData = await uploadResponse.json();
-      if (!uploadResponse.ok) {
-        throw new Error(uploadData.error || "فشل رفع صورة الإثبات");
-      }
-
-      const proofImageUrl = uploadData.url;
-
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,7 +60,6 @@ export default function BuyPage() {
           amount: parseFloat(orderData.amountEgp),
           binanceUid: orderData.binanceUid,
           walletNumber: orderData.walletNumber,
-          proofImageUrl,
           paymentMethod,
           receiveMethod,
         }),
@@ -114,10 +68,10 @@ export default function BuyPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to create order");
 
-      alert("تم إنشاء الطلب بنجاح!");
+      alert(locale === "ar" ? "تم إنشاء الطلب بنجاح! يرجى إتمام عملية الدفع." : "Order created successfully! Please complete the payment.");
       router.push(`/track?orderId=${data.id}`);
     } catch (error) {
-      alert("حدث خطأ: " + (error as Error).message);
+      alert((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -135,9 +89,9 @@ export default function BuyPage() {
             className="text-center mb-8 sm:mb-12"
           >
             <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-              شراء <span className="text-[#F5B942]">USDT</span>
+              {t("buyUsdtTitle")} <span className="text-[#F5B942]">USDT</span>
             </h1>
-            <p className="text-gray-400">ابدأ عملية الشراء الآن</p>
+            <p className="text-gray-400">{t("startBuyNow")}</p>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -152,7 +106,7 @@ export default function BuyPage() {
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Payment Method Switcher */}
                     <FormGroup>
-                      <Label>طريقة الدفع</Label>
+                      <Label>{t("paymentMethod")}</Label>
                       <div className="flex gap-3">
                         <button
                           type="button"
@@ -181,7 +135,7 @@ export default function BuyPage() {
 
                     {/* Receive Method Switcher */}
                     <FormGroup>
-                      <Label>طريقة استلام USDT</Label>
+                      <Label>{t("receiveMethod")}</Label>
                       <div className="flex gap-3">
                         <button
                           type="button"
@@ -206,16 +160,13 @@ export default function BuyPage() {
                           Bybit Pay
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        اختر المنصة التي تريد استلام USDT عليها
-                      </p>
                     </FormGroup>
 
                     <FormGroup>
                       <Label htmlFor="binanceUid">
                         {receiveMethod === "BINANCE_PAY"
-                          ? "Binance UID الخاص بك (لاستقبال USDT)"
-                          : "Bybit Pay ID الخاص بك (لاستقبال USDT)"}
+                          ? t("binanceUidLabel")
+                          : t("bybitUidLabel")}
                       </Label>
                       <Input
                         id="binanceUid"
@@ -234,8 +185,8 @@ export default function BuyPage() {
                     <FormGroup>
                       <Label htmlFor="walletNumber">
                         {paymentMethod === "VODAFONE_CASH"
-                          ? "رقم محفظة Vodafone Cash المرسل منها"
-                          : "رقم الحساب / الهاتف المرسل منه InstaPay"}
+                          ? t("walletNumberLabel")
+                          : t("instapayNumberLabel")}
                       </Label>
                       <Input
                         id="walletNumber"
@@ -252,7 +203,7 @@ export default function BuyPage() {
                     </FormGroup>
 
                     <FormGroup>
-                      <Label htmlFor="amountEgp">المبلغ بالجنيه المصري</Label>
+                      <Label htmlFor="amountEgp">{t("amountEgpLabel")}</Label>
                       <Input
                         id="amountEgp"
                         type="number"
@@ -262,21 +213,8 @@ export default function BuyPage() {
                         required
                       />
                       <p className="text-sm text-[#F5B942] mt-2">
-                        ستستقبل: {amountUsdt} USDT
+                        {t("willReceive")}: {amountUsdt} USDT
                       </p>
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="proofImage">إثبات التحويل (صورة الشاشة إجباري)</Label>
-                      <input
-                        id="proofImage"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setFile(e.target.files?.[0] || null)}
-                        required
-                        className="w-full px-4 py-3 rounded-lg bg-[#2D2D2D] border border-[#3D3D3D] text-white focus:outline-none focus:border-[#F5B942] transition-colors duration-300 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-[#F5B942] file:text-[#0A0A0A] file:font-semibold hover:file:opacity-90 cursor-pointer text-sm"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">يرجى رفع لقطة شاشة واضحة لإثبات التحويل لتسريع عملية المراجعة.</p>
                     </FormGroup>
 
                     <PrimaryButton
@@ -284,14 +222,14 @@ export default function BuyPage() {
                       className="w-full"
                       disabled={loading}
                     >
-                      {loading ? "جاري المعالجة..." : "إنشاء الطلب"}
+                      {loading ? t("processing") : t("createOrderBtn")}
                     </PrimaryButton>
                   </form>
                 </CardContent>
               </Card>
             </motion.div>
 
-            {/* Payment Info Sidebar */}
+            {/* Price Sidebar */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -299,109 +237,29 @@ export default function BuyPage() {
             >
               <Card>
                 <CardContent>
-                  <h3 className="font-bold mb-4">معلومات الدفع</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-gray-500 text-sm mb-2">
-                        طريقة الدفع:
-                      </p>
-                      <p className="font-semibold text-[#F5B942]">
-                        {paymentMethod === "VODAFONE_CASH" ? "Vodafone Cash" : "InstaPay"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-sm mb-2">
-                        {paymentMethod === "VODAFONE_CASH"
-                          ? "رقم Vodafone Cash:"
-                          : "رقم / رابط InstaPay:"}
-                      </p>
-                      {currentPayValue ? (
-                        <>
-                          <p className="font-semibold text-lg select-all">
-                            {currentPayValue}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={handleCopy}
-                            className="text-xs text-[#F5B942] hover:underline mt-2 transition-opacity"
-                          >
-                            {copied ? "✅ تم النسخ!" : "انسخ الرقم"}
-                          </button>
-                        </>
-                      ) : (
-                        <p className="text-gray-600 text-sm italic">
-                          جاري التحميل...
-                        </p>
-                      )}
-                    </div>
-                    <div className="pt-4 border-t border-[#2D2D2D]">
-                      <p className="text-gray-500 text-sm mb-2">
-                        ستستلم USDT عبر:
-                      </p>
-                      <p className="font-semibold text-[#F5B942]">
-                        {receiveMethod === "BINANCE_PAY" ? "Binance Pay" : "Bybit Pay"}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent>
-                  <h3 className="font-bold mb-4">التعليمات</h3>
-                  <ol className="space-y-2 text-sm text-gray-400 list-decimal list-inside">
-                    <li>
-                      أرسل المبلغ بالجنيه إلى{" "}
-                      {paymentMethod === "VODAFONE_CASH"
-                        ? "رقم Vodafone Cash"
-                        : "رقم InstaPay"}{" "}
-                      الموضح بالأعلى
-                    </li>
-                    <li>خذ لقطة شاشة للحوالة</li>
-                    <li>سيتم التحقق من الحوالة من قبل الإدارة</li>
-                    <li>
-                      سيتم إرسال USDT إلى{" "}
-                      {receiveMethod === "BINANCE_PAY" ? "Binance Pay" : "Bybit Pay"}{" "}
-                      الخاص بك
-                    </li>
-                  </ol>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent>
-                  <h3 className="font-bold mb-4">السعر الحالي</h3>
+                  <h3 className="font-bold mb-4">{t("currentPrice")}</h3>
                   <div className="text-center py-4">
-                    <p className="text-gray-500 text-sm mb-2">سعر الشراء</p>
+                    <p className="text-gray-400 text-sm mb-2">{t("buyRate")}</p>
                     <p className="text-3xl font-bold text-[#F5B942]">
                       {exchangeRate}
                     </p>
-                    <p className="text-xs text-gray-500 mt-2">EGP per USDT</p>
+                    <p className="text-xs text-gray-500 mt-2">{t("egpPerUsdt")}</p>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent>
+                  <h3 className="font-bold mb-4">{t("importantNotes")}</h3>
+                  <ul className="space-y-2 text-sm text-gray-400 list-disc list-inside">
+                    {(t("buyNotes") as string[]).map((note, idx) => (
+                      <li key={idx}>{note}</li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             </motion.div>
           </div>
-
-          {/* Additional Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-8 sm:mt-12 max-w-2xl"
-          >
-            <Card>
-              <CardContent>
-                <h3 className="text-lg font-bold mb-4">ملاحظات مهمة</h3>
-                <ul className="space-y-2 text-sm text-gray-400">
-                  <li>• تأكد من صحة بيانات الحساب المُراد الاستلام عليه (Binance / Bybit)</li>
-                  <li>• احتفظ بلقطة شاشة الحوالة</li>
-                  <li>• سيتم التحقق من الطلب خلال 30 دقيقة</li>
-                  <li>• تواصل معنا عبر Telegram للدعم</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </motion.div>
         </div>
       </section>
 

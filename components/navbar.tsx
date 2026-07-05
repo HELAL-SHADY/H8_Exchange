@@ -3,11 +3,17 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Globe } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 export function Navbar() {
   const { data: session } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t, locale, setLocale } = useTranslation();
+
+  const toggleLanguage = () => {
+    setLocale(locale === "ar" ? "en" : "ar");
+  };
 
   return (
     <nav className="bg-[#0A0A0A] border-b border-[#2D2D2D] sticky top-0 z-50">
@@ -38,34 +44,34 @@ export function Navbar() {
             <div className="text-2xl font-bold bg-gradient-to-r from-[#F5B942] to-[#E6A430] bg-clip-text text-transparent">
               H8
             </div>
-            <span className="text-white font-semibold hidden sm:inline">Exchange</span>
+            <span className="text-white font-semibold hidden sm:inline">{t("exchange")}</span>
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <Link
               href="/buy"
               className="text-gray-400 hover:text-[#F5B942] transition-colors"
             >
-              شراء
+              {t("buy")}
             </Link>
             <Link
               href="/sell"
               className="text-gray-400 hover:text-[#F5B942] transition-colors"
             >
-              بيع
+              {t("sell")}
             </Link>
             <Link
               href="/track"
               className="text-gray-400 hover:text-[#F5B942] transition-colors"
             >
-              تتبع
+              {t("track")}
             </Link>
             <Link
               href="/reviews"
               className="text-gray-400 hover:text-[#F5B942] transition-colors"
             >
-              تقييمات
+              {t("reviews")}
             </Link>
 
             {session?.user ? (
@@ -74,7 +80,7 @@ export function Navbar() {
                   href="/my-orders"
                   className="text-gray-400 hover:text-[#F5B942] transition-colors"
                 >
-                  طلباتي
+                  {t("myOrders")}
                 </Link>
                 {(session.user as any).role === "ADMIN" ||
                 (session.user as any).role === "SUPER_ADMIN" ? (
@@ -82,14 +88,14 @@ export function Navbar() {
                     href="/admin"
                     className="px-4 py-2 bg-[#F5B942] text-[#0A0A0A] rounded-lg font-semibold hover:shadow-lg hover:shadow-[#F5B942]/50 transition-all"
                   >
-                    لوحة التحكم
+                    {t("dashboard")}
                   </Link>
                 ) : null}
                 <button
                   onClick={() => signOut()}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
-                  تسجيل الخروج
+                  {t("logout")}
                 </button>
               </div>
             ) : (
@@ -97,18 +103,39 @@ export function Navbar() {
                 href="/auth/login"
                 className="px-4 py-2 bg-[#F5B942] text-[#0A0A0A] rounded-lg font-semibold hover:shadow-lg hover:shadow-[#F5B942]/50 transition-all"
               >
-                تسجيل الدخول
+                {t("login")}
               </Link>
             )}
+
+            {/* Language Switcher */}
+            <button
+              onClick={toggleLanguage}
+              className="p-2 bg-[#1A1A1A] hover:bg-[#2D2D2D] text-gray-300 hover:text-white rounded-lg transition-colors border border-[#2D2D2D] flex items-center gap-1.5 text-sm"
+              title={locale === "ar" ? "English" : "العربية"}
+            >
+              <Globe size={16} />
+              <span>{locale === "ar" ? "EN" : "AR"}</span>
+            </button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden text-[#F5B942]"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* Mobile Right Controls (Menu & Language) */}
+          <div className="md:hidden flex items-center gap-3">
+            {/* Language Switcher for Mobile */}
+            <button
+              onClick={toggleLanguage}
+              className="p-2 bg-[#1A1A1A] hover:bg-[#2D2D2D] text-gray-300 hover:text-white rounded-lg transition-colors border border-[#2D2D2D] flex items-center gap-1 text-xs"
+            >
+              <Globe size={14} />
+              <span>{locale === "ar" ? "EN" : "AR"}</span>
+            </button>
+
+            <button
+              className="text-[#F5B942]"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
@@ -119,28 +146,28 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-2 text-gray-400 hover:text-[#F5B942] hover:bg-[#1A1A1A] rounded-lg"
             >
-              شراء
+              {t("buy")}
             </Link>
             <Link
               href="/sell"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-2 text-gray-400 hover:text-[#F5B942] hover:bg-[#1A1A1A] rounded-lg"
             >
-              بيع
+              {t("sell")}
             </Link>
             <Link
               href="/track"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-2 text-gray-400 hover:text-[#F5B942] hover:bg-[#1A1A1A] rounded-lg"
             >
-              تتبع
+              {t("track")}
             </Link>
             <Link
               href="/reviews"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-4 py-2 text-gray-400 hover:text-[#F5B942] hover:bg-[#1A1A1A] rounded-lg"
             >
-              تقييمات
+              {t("reviews")}
             </Link>
             {session?.user ? (
               <div className="pt-2 border-t border-[#2D2D2D] space-y-2">
@@ -149,7 +176,7 @@ export function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-4 py-2 text-gray-400 hover:text-[#F5B942] hover:bg-[#1A1A1A] rounded-lg"
                 >
-                  طلباتي
+                  {t("myOrders")}
                 </Link>
                 {((session.user as any).role === "ADMIN" ||
                 (session.user as any).role === "SUPER_ADMIN") && (
@@ -158,14 +185,17 @@ export function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 bg-[#F5B942] text-[#0A0A0A] rounded-lg font-semibold text-center hover:shadow-lg hover:shadow-[#F5B942]/50 transition-all"
                   >
-                    لوحة التحكم
+                    {t("dashboard")}
                   </Link>
                 )}
                 <button
-                  onClick={() => signOut()}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    signOut();
+                  }}
                   className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
-                  تسجيل الخروج
+                  {t("logout")}
                 </button>
               </div>
             ) : (
@@ -174,7 +204,7 @@ export function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-4 py-2 bg-[#F5B942] text-[#0A0A0A] rounded-lg font-semibold text-center hover:shadow-lg hover:shadow-[#F5B942]/50 transition-all"
               >
-                تسجيل الدخول
+                {t("login")}
               </Link>
             )}
           </div>

@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { Send } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 export function Footer() {
+  const { t } = useTranslation();
+
   return (
     <footer className="bg-[#0A0A0A] border-t border-[#2D2D2D] mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -14,20 +17,20 @@ export function Footer() {
               H8 Exchange
             </h3>
             <p className="text-gray-500 text-sm">
-              منصة موثوقة وآمنة لشراء وبيع USDT مقابل الجنيه المصري
+              {t("heroSubtitle")}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-white font-semibold mb-4">روابط سريعة</h4>
+            <h4 className="text-white font-semibold mb-4">{t("howItWorks") === "كيف يعمل" ? "روابط سريعة" : "Quick Links"}</h4>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/buy"
                   className="text-gray-500 hover:text-[#F5B942] transition-colors"
                 >
-                  شراء USDT
+                  {t("buyUsdt")}
                 </Link>
               </li>
               <li>
@@ -35,7 +38,7 @@ export function Footer() {
                   href="/sell"
                   className="text-gray-500 hover:text-[#F5B942] transition-colors"
                 >
-                  بيع USDT
+                  {t("sellUsdt")}
                 </Link>
               </li>
               <li>
@@ -43,7 +46,7 @@ export function Footer() {
                   href="/track"
                   className="text-gray-500 hover:text-[#F5B942] transition-colors"
                 >
-                  تتبع الطلب
+                  {t("trackOrderTitle")}
                 </Link>
               </li>
             </ul>
@@ -51,14 +54,15 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <h4 className="text-white font-semibold mb-4">الدعم</h4>
+            <h4 className="text-white font-semibold mb-4">{t("needHelp") === "هل تحتاج إلى مساعدة؟" ? "الدعم" : "Support"}</h4>
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/contact"
+                  href="https://t.me/HELAL_SHADY"
+                  target="_blank"
                   className="text-gray-500 hover:text-[#F5B942] transition-colors"
                 >
-                  تواصل معنا
+                  {t("contactUs")}
                 </Link>
               </li>
               <li>
@@ -66,7 +70,7 @@ export function Footer() {
                   href="/privacy"
                   className="text-gray-500 hover:text-[#F5B942] transition-colors"
                 >
-                  سياسة الخصوصية
+                  {t("howItWorks") === "كيف يعمل" ? "سياسة الخصوصية" : "Privacy Policy"}
                 </Link>
               </li>
               <li>
@@ -74,7 +78,7 @@ export function Footer() {
                   href="/terms"
                   className="text-gray-500 hover:text-[#F5B942] transition-colors"
                 >
-                  شروط الاستخدام
+                  {t("howItWorks") === "كيف يعمل" ? "شروط الاستخدام" : "Terms of Service"}
                 </Link>
               </li>
             </ul>
@@ -82,7 +86,7 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="text-white font-semibold mb-4">تواصل معنا</h4>
+            <h4 className="text-white font-semibold mb-4">{t("contactUs")}</h4>
             <a
               href="https://t.me/HELAL_SHADY"
               target="_blank"
@@ -99,7 +103,7 @@ export function Footer() {
         <div className="border-t border-[#2D2D2D] pt-8">
           <div className="flex justify-between items-center">
             <p className="text-gray-600 text-sm">
-              &copy; 2024 H8 Exchange. جميع الحقوق محفوظة.
+              &copy; 2026 H8 Exchange. {t("howItWorks") === "كيف يعمل" ? "جميع الحقوق محفوظة." : "All rights reserved."}
             </p>
             <div className="flex gap-4">
               <a

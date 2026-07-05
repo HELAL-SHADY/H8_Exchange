@@ -111,10 +111,10 @@ export async function POST(request: NextRequest) {
         phone,
         binanceUid,
         walletNumber,
-        proofImageUrl,
+        proofImageUrl: proofImageUrl || null,
         paymentMethod,
         receiveMethod,
-        status: "PENDING_REVIEW",
+        status: "PENDING_PAYMENT",
       },
     });
 
@@ -125,16 +125,9 @@ export async function POST(request: NextRequest) {
         orderId: order.id,
         type: "ORDER_SUBMITTED",
         title: "تم إنشاء طلبك",
-        message: `تم إنشاء طلب ${type === "BUY" ? "شراء" : "بيع"} بقيمة ${amount}`,
+        message: `تم إنشاء طلب ${type === "BUY" ? "شراء" : "بيع"} بقيمة ${amount} وهو في انتظار الدفع`,
       },
     });
-
-    // Send Telegram Notification
-    try {
-      await sendNewOrderNotification(order);
-    } catch (telegramError) {
-      console.error("Failed to send Telegram notification:", telegramError);
-    }
 
     // Log the action
     await prisma.auditLog.create({
