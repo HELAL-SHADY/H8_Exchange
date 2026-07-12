@@ -163,7 +163,26 @@ export const translations = {
     uploadScreenshotPlaceholder: "يرجى رفع لقطة شاشة واضحة لإثبات التحويل لتسريع عملية المراجعة.",
     markAsPaid: "تم الدفع",
     paymentSubmittedSuccess: "تم تقديم الطلب بنجاح وهو الآن قيد المراجعة!",
-    uploadFirstError: "الرجاء تحميل إثبات الدفع (صورة التحويل)"
+    uploadFirstError: "الرجاء تحميل إثبات الدفع (صورة التحويل)",
+
+    // Reviews Page
+    userReviews: "تقييمات المستخدمين",
+    userReviewsSubtitle: "آراء المستخدمين الراضين عن خدماتنا",
+    overallRating: "التقييم العام",
+    fromNReviews: "من {count} تقييم",
+    noReviewsYet: "لا توجد تقييمات بعد",
+
+    // My Orders Page
+    orderHistoryTitle1: "سجل",
+    orderHistoryTitle2: "الطلبات",
+    orderHistorySubtitle: "جميع عمليات الشراء والبيع الخاصة بك",
+    tabAll: "الكل",
+    tabOngoing: "قيد التنفيذ",
+    tabCompleted: "مكتملة",
+    tabRejected: "مرفوضة",
+    loadingOrders: "جاري تحميل الطلبات...",
+    noOrdersInTab: "لا توجد طلبات في هذا التصنيف",
+    viewDetails: "عرض التفاصيل ←"
   },
   en: {
     // Navbar
@@ -323,7 +342,26 @@ export const translations = {
     uploadScreenshotPlaceholder: "Please upload a clear screenshot of the transfer to speed up review.",
     markAsPaid: "I have Paid",
     paymentSubmittedSuccess: "Order successfully submitted and is now under review!",
-    uploadFirstError: "Please upload the transfer proof screenshot"
+    uploadFirstError: "Please upload the transfer proof screenshot",
+
+    // Reviews Page
+    userReviews: "User Reviews",
+    userReviewsSubtitle: "Opinions of our satisfied users",
+    overallRating: "Overall Rating",
+    fromNReviews: "From {count} reviews",
+    noReviewsYet: "No reviews yet",
+
+    // My Orders Page
+    orderHistoryTitle1: "Order",
+    orderHistoryTitle2: "History",
+    orderHistorySubtitle: "All your buy and sell transactions",
+    tabAll: "All",
+    tabOngoing: "Ongoing",
+    tabCompleted: "Completed",
+    tabRejected: "Rejected",
+    loadingOrders: "Loading orders...",
+    noOrdersInTab: "No orders in this category",
+    viewDetails: "View Details ←"
   }
 };
 

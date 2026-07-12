@@ -15,8 +15,10 @@ import {
   Star,
   Globe,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     completedOrders: 0,
     totalUsers: 0,
@@ -60,48 +62,48 @@ export default function HomePage() {
   const features = [
     {
       icon: Shield,
-      title: "معاملات آمنة",
-      description: "ضمان الأمان والحماية في كل عملية",
+      title: t("feature1Title"),
+      description: t("feature1Desc"),
     },
     {
       icon: Zap,
-      title: "معالجة سريعة",
-      description: "تتم المعالجة خلال دقائق",
+      title: t("feature2Title"),
+      description: t("feature2Desc"),
     },
     {
       icon: TrendingUp,
-      title: "دعم Binance",
-      description: "تحويل مباشر من/إلى Binance",
+      title: t("feature3Title"),
+      description: t("feature3Desc"),
     },
     {
       icon: Clock,
-      title: "دعم 24/7",
-      description: "فريق الدعم متاح على مدار الساعة",
+      title: t("feature4Title"),
+      description: t("feature4Desc"),
     },
     {
       icon: Globe,
-      title: "دعم Vodafone Cash",
-      description: "محافظ الهاتف المحمول المدعومة",
+      title: t("feature5Title"),
+      description: t("feature5Desc"),
     },
     {
       icon: Star,
-      title: "تقييمات عالية",
-      description: "مصدوقة من قبل آلاف المستخدمين",
+      title: t("feature6Title"),
+      description: t("feature6Desc"),
     },
   ];
 
   const steps = {
     buy: [
-      { number: 1, title: "إنشاء طلب", description: "ملء نموذج الطلب" },
-      { number: 2, title: "تحويل EGP", description: "إرسال الأموال للمحفظة" },
-      { number: 3, title: "رفع الإثبات", description: "تحميل لقطة شاشة" },
-      { number: 4, title: "استقبال USDT", description: "وصول USDT للمحفظة" },
+      { number: 1, title: t("step1Title"), description: t("step1Desc") },
+      { number: 2, title: t("step2TitleBuy"), description: t("step2DescBuy") },
+      { number: 3, title: t("step3TitleBuy"), description: t("step3DescBuy") },
+      { number: 4, title: t("step4TitleBuy"), description: t("step4DescBuy") },
     ],
     sell: [
-      { number: 1, title: "إنشاء طلب", description: "ملء نموذج الطلب" },
-      { number: 2, title: "تحويل USDT", description: "إرسال USDT للمحفظة" },
-      { number: 3, title: "التحقق", description: "التحقق من الحوالة" },
-      { number: 4, title: "استقبال EGP", description: "وصول الأموال" },
+      { number: 1, title: t("step1Title"), description: t("step1Desc") },
+      { number: 2, title: t("step2TitleSell"), description: t("step2DescSell") },
+      { number: 3, title: t("step3TitleSell"), description: t("step3DescSell") },
+      { number: 4, title: t("step4TitleSell"), description: t("step4DescSell") },
     ],
   };
 
@@ -120,11 +122,11 @@ export default function HomePage() {
           >
             <h1 className="text-5xl md:text-7xl font-bold mb-4">
               <span className="bg-gradient-to-r from-[#F5B942] to-[#E6A430] bg-clip-text text-transparent">
-                H8 Exchange
+                {t("heroTitle")}
               </span>
             </h1>
             <p className="text-2xl md:text-3xl text-gray-300 mb-8">
-              شراء وبيع USDT مقابل الجنيه المصري بسرعة وأمان
+              {t("heroSubtitle")}
             </p>
             <div className="flex gap-6 justify-center flex-wrap mt-4">
               {/* Buy Button */}
@@ -141,10 +143,10 @@ export default function HomePage() {
                         <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
                           <path d="M12 4v16M4 12l8-8 8 8" stroke="#0A0A0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
-                        <span className="text-[#0A0A0A] font-extrabold text-xl tracking-wide">شراء USDT</span>
+                        <span className="text-[#0A0A0A] font-extrabold text-xl tracking-wide">{t("buyUsdt")}</span>
                       </div>
                       <span className="text-[#0A0A0A]/70 text-sm font-medium">
-                        {exchangeRate.buyRate} EGP / USDT
+                        {exchangeRate.buyRate} {t("egpPerUsdt")}
                       </span>
                     </div>
                   </div>
@@ -166,10 +168,10 @@ export default function HomePage() {
                         <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
                           <path d="M12 20V4M4 12l8 8 8-8" stroke="#F5B942" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
-                        <span className="text-[#F5B942] font-extrabold text-xl tracking-wide">بيع USDT</span>
+                        <span className="text-[#F5B942] font-extrabold text-xl tracking-wide">{t("sellUsdt")}</span>
                       </div>
                       <span className="text-gray-400 text-sm font-medium">
-                        {exchangeRate.sellRate} EGP / USDT
+                        {exchangeRate.sellRate} {t("egpPerUsdt")}
                       </span>
                     </div>
                   </div>
@@ -187,11 +189,11 @@ export default function HomePage() {
             >
               <Card className="border-[#F5B942]/50 hover:border-[#F5B942] transition-colors">
                 <CardContent className="text-center">
-                  <p className="text-gray-400 mb-2">سعر الشراء</p>
+                  <p className="text-gray-400 mb-2">{t("buyRate")}</p>
                   <p className="text-4xl font-bold text-[#F5B942]">
                     {exchangeRate.buyRate} EGP
                   </p>
-                  <p className="text-sm text-gray-500 mt-2">لكل 1 USDT</p>
+                  <p className="text-sm text-gray-500 mt-2">{t("perUsdt")}</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -202,11 +204,11 @@ export default function HomePage() {
             >
               <Card className="border-[#F5B942]/50 hover:border-[#F5B942] transition-colors">
                 <CardContent className="text-center">
-                  <p className="text-gray-400 mb-2">سعر البيع</p>
+                  <p className="text-gray-400 mb-2">{t("sellRate")}</p>
                   <p className="text-4xl font-bold text-[#F5B942]">
                     {exchangeRate.sellRate} EGP
                   </p>
-                  <p className="text-sm text-gray-500 mt-2">لكل 1 USDT</p>
+                  <p className="text-sm text-gray-500 mt-2">{t("perUsdt")}</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -217,13 +219,13 @@ export default function HomePage() {
       {/* Statistics Section */}
       <section className="py-20 px-4 bg-[#1A1A1A]/50">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12">إحصائياتنا</h2>
+          <h2 className="text-4xl font-bold text-center mb-12">{t("ourStats")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { label: "طلب مكتمل", value: stats.completedOrders },
-              { label: "مستخدم", value: stats.totalUsers },
-              { label: "معدل النجاح", value: `${stats.successRate}%` },
-              { label: "التقييم", value: `${stats.avgRating} ⭐` },
+              { label: t("completedOrder"), value: stats.completedOrders },
+              { label: t("user"), value: stats.totalUsers },
+              { label: t("successRate"), value: `${stats.successRate}%` },
+              { label: t("rating"), value: `${stats.avgRating} ⭐` },
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -248,7 +250,7 @@ export default function HomePage() {
       {/* Features Section */}
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12">المميزات</h2>
+          <h2 className="text-4xl font-bold text-center mb-12">{t("features")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {features.map((feature, index) => {
               const Icon = feature.icon;
@@ -280,11 +282,11 @@ export default function HomePage() {
       {/* How It Works Section */}
       <section className="py-20 px-4 bg-[#1A1A1A]/50">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12">كيف يعمل</h2>
+          <h2 className="text-4xl font-bold text-center mb-12">{t("howItWorks")}</h2>
 
           {/* Buy */}
           <div className="mb-20">
-            <h3 className="text-2xl font-bold text-[#F5B942] mb-8">شراء USDT</h3>
+            <h3 className="text-2xl font-bold text-[#F5B942] mb-8">{t("buyUsdt")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {steps.buy.map((step, index) => (
                 <div key={index} className="relative">
@@ -309,7 +311,7 @@ export default function HomePage() {
 
           {/* Sell */}
           <div>
-            <h3 className="text-2xl font-bold text-[#F5B942] mb-8">بيع USDT</h3>
+            <h3 className="text-2xl font-bold text-[#F5B942] mb-8">{t("sellUsdt")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {steps.sell.map((step, index) => (
                 <div key={index} className="relative">
@@ -339,11 +341,11 @@ export default function HomePage() {
         <div className="max-w-2xl mx-auto">
           <Card>
             <CardContent>
-              <h2 className="text-2xl font-bold mb-6 text-center">تتبع الطلب</h2>
+              <h2 className="text-2xl font-bold mb-6 text-center">{t("trackOrderTitle")}</h2>
               <div className="space-y-4">
                 <input
                   type="text"
-                  placeholder="أدخل رقم الطلب"
+                  placeholder={t("enterOrderId")}
                   className="w-full px-4 py-3 rounded-lg bg-[#2D2D2D] border border-[#3D3D3D] text-white placeholder-gray-500 focus:outline-none focus:border-[#F5B942] transition-colors"
                   id="trackOrderId"
                 />
@@ -360,7 +362,7 @@ export default function HomePage() {
                     }
                   }}
                 >
-                  بحث
+                  {t("search")}
                 </PrimaryButton>
               </div>
             </CardContent>

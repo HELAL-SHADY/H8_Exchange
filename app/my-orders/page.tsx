@@ -15,6 +15,7 @@ import {
   Copy,
   Check,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 interface Order {
   id: string;
@@ -27,56 +28,57 @@ interface Order {
   completedAt?: string;
 }
 
-const StatusDisplay: Record<
-  string,
-  { label: string; icon: any; color: string; bg: string }
-> = {
-  PENDING_REVIEW: {
-    label: "قيد المراجعة",
-    icon: Clock,
-    color: "text-yellow-400",
-    bg: "bg-yellow-600/20",
-  },
-  UNDER_VERIFICATION: {
-    label: "التحقق جاري",
-    icon: AlertCircle,
-    color: "text-blue-400",
-    bg: "bg-blue-600/20",
-  },
-  APPROVED: {
-    label: "موافق عليه",
-    icon: CheckCircle,
-    color: "text-green-400",
-    bg: "bg-green-600/20",
-  },
-  REJECTED: {
-    label: "مرفوض",
-    icon: XCircle,
-    color: "text-red-400",
-    bg: "bg-red-600/20",
-  },
-  COMPLETED: {
-    label: "مكتمل",
-    icon: CheckCircle,
-    color: "text-[#F5B942]",
-    bg: "bg-[#F5B942]/20",
-  },
-};
-
-const TABS = [
-  { key: "ALL", label: "الكل" },
-  { key: "ONGOING", label: "قيد التنفيذ" },
-  { key: "COMPLETED", label: "مكتملة" },
-  { key: "REJECTED", label: "مرفوضة" },
-];
-
 export default function MyOrdersPage() {
+  const { t } = useTranslation();
   const { data: session, status } = useSession();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("ALL");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const StatusDisplay: Record<
+    string,
+    { label: string; icon: any; color: string; bg: string }
+  > = {
+    PENDING_REVIEW: {
+      label: t("status_PENDING_REVIEW"),
+      icon: Clock,
+      color: "text-yellow-400",
+      bg: "bg-yellow-600/20",
+    },
+    UNDER_VERIFICATION: {
+      label: t("status_UNDER_VERIFICATION"),
+      icon: AlertCircle,
+      color: "text-blue-400",
+      bg: "bg-blue-600/20",
+    },
+    APPROVED: {
+      label: t("status_APPROVED"),
+      icon: CheckCircle,
+      color: "text-green-400",
+      bg: "bg-green-600/20",
+    },
+    REJECTED: {
+      label: t("status_REJECTED"),
+      icon: XCircle,
+      color: "text-red-400",
+      bg: "bg-red-600/20",
+    },
+    COMPLETED: {
+      label: t("status_COMPLETED"),
+      icon: CheckCircle,
+      color: "text-[#F5B942]",
+      bg: "bg-[#F5B942]/20",
+    },
+  };
+
+  const TABS = [
+    { key: "ALL", label: t("tabAll") },
+    { key: "ONGOING", label: t("tabOngoing") },
+    { key: "COMPLETED", label: t("tabCompleted") },
+    { key: "REJECTED", label: t("tabRejected") },
+  ];
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -124,7 +126,7 @@ export default function MyOrdersPage() {
   if (status === "loading" || !session?.user) {
     return (
       <main className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-gray-400">جاري التحميل...</p>
+        <p className="text-gray-400">{t("loadingOrders")}</p>
       </main>
     );
   }
@@ -141,9 +143,9 @@ export default function MyOrdersPage() {
             className="mb-8"
           >
             <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-              سجل <span className="text-[#F5B942]">الطلبات</span>
+              {t("orderHistoryTitle1")} <span className="text-[#F5B942]">{t("orderHistoryTitle2")}</span>
             </h1>
-            <p className="text-gray-400">جميع عمليات الشراء والبيع الخاصة بك</p>
+            <p className="text-gray-400">{t("orderHistorySubtitle")}</p>
           </motion.div>
 
           {/* Tabs */}
@@ -166,12 +168,12 @@ export default function MyOrdersPage() {
           {/* Orders List */}
           {loading ? (
             <div className="text-center text-gray-400 py-12">
-              جاري تحميل الطلبات...
+              {t("loadingOrders")}
             </div>
           ) : filteredOrders.length === 0 ? (
             <Card>
               <CardContent className="text-center py-16">
-                <p className="text-gray-500">لا توجد طلبات في هذا التصنيف</p>
+                <p className="text-gray-500">{t("noOrdersInTab")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -199,7 +201,7 @@ export default function MyOrdersPage() {
                                 isBuy ? "text-green-400" : "text-red-400"
                               }`}
                             >
-                              {isBuy ? "شراء" : "بيع"}{" "}
+                              {isBuy ? t("buy") : t("sell")}{" "}
                               <span className="text-white">USDT</span>
                             </span>
                             <span
@@ -213,13 +215,13 @@ export default function MyOrdersPage() {
                           {/* Details */}
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-gray-500">المبلغ</span>
+                              <span className="text-gray-500">{t("amount")}</span>
                               <span className="font-bold text-white">
                                 {order.amount} {isBuy ? "EGP" : "USDT"}
                               </span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-500">رقم الطلب</span>
+                              <span className="text-gray-500">{t("orderId")}</span>
                               <span className="flex items-center gap-2">
                                 <span className="font-mono text-gray-300 text-xs">
                                   {order.id}
@@ -251,7 +253,7 @@ export default function MyOrdersPage() {
                               )}
                             </span>
                             <span className="text-xs text-[#F5B942]">
-                              عرض التفاصيل ←
+                              {t("viewDetails")}
                             </span>
                           </div>
                         </CardContent>

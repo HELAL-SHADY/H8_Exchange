@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 interface Review {
   id: string;
@@ -16,6 +17,7 @@ interface Review {
 }
 
 export default function ReviewsPage() {
+  const { t } = useTranslation();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ export default function ReviewsPage() {
         <Navbar />
         <section className="py-12 px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="text-gray-400">جاري التحميل...</p>
+            <p className="text-gray-400">{t("loading")}</p>
           </div>
         </section>
         <Footer />
@@ -62,9 +64,9 @@ export default function ReviewsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <h1 className="text-4xl font-bold mb-4">تقييمات المستخدمين</h1>
+            <h1 className="text-4xl font-bold mb-4">{t("userReviews")}</h1>
             <p className="text-gray-400">
-              آراء المستخدمين الراضين عن خدماتنا
+              {t("userReviewsSubtitle")}
             </p>
           </motion.div>
 
@@ -76,7 +78,7 @@ export default function ReviewsPage() {
           >
             <Card className="text-center py-12">
               <CardContent>
-                <p className="text-gray-400 mb-4">التقييم العام</p>
+                <p className="text-gray-400 mb-4">{t("overallRating")}</p>
                 <div className="flex items-center justify-center gap-4">
                   <div className="text-5xl font-bold text-[#F5B942]">
                     {avgRating.toFixed(1)}
@@ -96,7 +98,7 @@ export default function ReviewsPage() {
                   </div>
                 </div>
                 <p className="text-gray-500 mt-4">
-                  من {reviews.length} تقييم
+                  {t("fromNReviews").replace("{count}", reviews.length.toString())}
                 </p>
               </CardContent>
             </Card>
@@ -107,7 +109,7 @@ export default function ReviewsPage() {
             {reviews.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-12">
-                  <p className="text-gray-500">لا توجد تقييمات بعد</p>
+                  <p className="text-gray-500">{t("noReviewsYet")}</p>
                 </CardContent>
               </Card>
             ) : (
