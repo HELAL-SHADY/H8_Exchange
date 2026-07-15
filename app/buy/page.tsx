@@ -89,7 +89,8 @@ export default function BuyPage() {
             className="text-center mb-8 sm:mb-12"
           >
             <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-              {t("buyUsdtTitle")} <span className="text-[#F5B942]">USDT</span>
+              {locale === "ar" ? "شراء" : "Buy"}{" "}
+              <span className="text-[#F5B942]">USDT</span>
             </h1>
             <p className="text-gray-400">{t("startBuyNow")}</p>
           </motion.div>
