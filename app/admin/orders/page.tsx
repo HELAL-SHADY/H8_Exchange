@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PrimaryButton, DangerButton, SecondaryButton } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Select, Input, FormGroup, Label } from "@/components/ui/form";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Download } from "lucide-react";
 
 interface Order {
   id: string;
@@ -94,10 +94,25 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    const query = new URLSearchParams();
+    if (status) query.append("status", status);
+    if (type) query.append("type", type);
+    window.open(`/api/admin/orders/export?${query.toString()}`, "_blank");
+  };
+
   return (
     <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+      >
         <h1 className="text-4xl font-bold">إدارة الطلبات</h1>
+        <SecondaryButton onClick={handleExportExcel} className="flex items-center gap-2">
+          <Download size={18} />
+          <span>تصدير إلى Excel</span>
+        </SecondaryButton>
       </motion.div>
 
       {/* Filters */}
