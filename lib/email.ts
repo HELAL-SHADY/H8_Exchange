@@ -36,16 +36,26 @@ export async function sendPasswordResetEmail({
     return { success: true };
   }
 
-  try {
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: {
-        user,
-        pass,
-      },
-    });
+    const isGmail = host.toLowerCase().includes("gmail");
+    const transporter = nodemailer.createTransport(
+      isGmail
+        ? {
+            service: "gmail",
+            auth: {
+              user,
+              pass,
+            },
+          }
+        : {
+            host,
+            port,
+            secure: port === 465,
+            auth: {
+              user,
+              pass,
+            },
+          }
+    );
 
     const htmlContent = `
 <!DOCTYPE html>
