@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,10 +13,20 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("reset") === "success") {
+        setSuccessMessage("تم تغيير كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول.");
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +73,12 @@ export default function LoginPage() {
 
         <Card>
           <CardContent>
+            {successMessage && (
+              <div className="mb-4 p-3 bg-emerald-600/20 border border-emerald-500 rounded-lg text-emerald-400 text-sm">
+                {successMessage}
+              </div>
+            )}
+
             {error && (
               <div className="mb-4 p-3 bg-red-600/20 border border-red-600 rounded-lg text-red-400 text-sm">
                 {error}
@@ -88,7 +104,17 @@ export default function LoginPage() {
               </FormGroup>
 
               <FormGroup>
-                <Label htmlFor="password">كلمة المرور</Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="password" className="mb-0">
+                    كلمة المرور
+                  </Label>
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-xs text-[#F5B942] hover:underline transition-colors"
+                  >
+                    هل نسيت كلمة المرور؟
+                  </Link>
+                </div>
                 <Input
                   id="password"
                   type="password"

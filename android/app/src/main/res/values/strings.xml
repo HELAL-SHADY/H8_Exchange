@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">H8 Exchange</string>
+    <string name="title_activity_main">H8 Exchange</string>
+    <string name="package_name">com.h8exchange.app</string>
+    <string name="custom_url_scheme">com.h8exchange.app</string>
+</resources>

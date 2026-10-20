@@ -234,6 +234,17 @@ model SiteSettings {
   @@map("site_settings")
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("password_reset_tokens")
+}
+
 // Enums
 enum Role {
   USER
@@ -280,4 +291,5 @@ enum ActionType {
   DELETE_REVIEW
   EDIT_ORDER
   EXPORT_ORDERS
-}
+  PASSWORD_RESET
+}
