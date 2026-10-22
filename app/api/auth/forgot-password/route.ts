@@ -59,7 +59,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!emailResult.success) {
-      console.warn("Email sending returned warning/error:", emailResult.error);
+      console.error("Email sending returned warning/error:", emailResult.error);
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          { error: "فشل إرسال كود التحقق إلى البريد الإلكتروني. يرجى المحاولة لاحقاً أو التواصل مع الدعم." },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json(
