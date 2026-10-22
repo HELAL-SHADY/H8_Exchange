@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { sendOrderStatusNotification } from "@/lib/telegram";
+import { sendOrderCompletedEmail } from "@/lib/email";
 
 async function checkAdminRole(session: any) {
   if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role)) {
@@ -74,18 +75,62 @@ export async function PATCH(
       },
     });
 
-    // Create notification for user
+    // Create notification for user in Arabic
+    const formattedTitle =
+      action === "COMPLETE"
+        ? "🎉 تم إكمال طلبك بنجاح"
+        : action === "APPROVE"
+        ? "✅ تم قبول طلبك"
+        : "❌ تم رفض طلبك";
+
+    const isBuy = order.type === "BUY";
+    const formattedMessage =
+      action === "COMPLETE"
+        ? (adminNote ||
+          (isBuy
+            ? `تم إرسال ${order.amount} USDT إلى حسابك بنجاح. شكراً لتعاملك مع H8 Exchange!`
+            : `تم تحويل ${order.amount} ج.م إلى محفظتك بنجاح. شكراً لتعاملك مع H8 Exchange!`))
+        : action === "APPROVE"
+        ? (adminNote || "تمت الموافقة على طلبك بنجاح وهو الآن في مرحلة التنفيذ والتحويل.")
+        : (adminNote || "تم رفض طلبك. يرجى مراجعة التفاصيل أو التواصل مع الدعم الفني.");
+
     await prisma.notification.create({
       data: {
         userId: order.userId,
         orderId: order.id,
-        type: action === "APPROVE" ? "ORDER_APPROVED" : action === "REJECT" ? "ORDER_REJECTED" : "ORDER_COMPLETED",
-        title: action === "APPROVE" ? "تم قبول طلبك" : action === "REJECT" ? "تم رفض طلبك" : "تم إكمال طلبك",
-        message: adminNote || `Order ${newStatus.toLowerCase()}`,
+        type:
+          action === "APPROVE"
+            ? "ORDER_APPROVED"
+            : action === "REJECT"
+            ? "ORDER_REJECTED"
+            : "ORDER_COMPLETED",
+        title: formattedTitle,
+        message: formattedMessage,
+        actionUrl: `/track?id=${order.id}`,
       },
     });
 
-    // Send Telegram Notification
+    // Send Email to user on order completion
+    if (action === "COMPLETE" && order.user?.email) {
+      try {
+        await sendOrderCompletedEmail({
+          toEmail: order.user.email,
+          userName: order.user.name || order.fullName,
+          orderId: order.id,
+          orderType: order.type,
+          amount: order.amount,
+          paymentMethod: order.paymentMethod,
+          receiveMethod: order.receiveMethod,
+          walletNumber: order.walletNumber,
+          binanceUid: order.binanceUid,
+          adminNote: adminNote || null,
+        });
+      } catch (emailErr) {
+        console.error("Failed to send order completed email to user:", emailErr);
+      }
+    }
+
+    // Send Telegram Notification to Admin
     try {
       await sendOrderStatusNotification(order, existingOrder.status);
     } catch (telegramError) {

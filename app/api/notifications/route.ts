@@ -63,17 +63,42 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const { id, isRead } = await request.json();
+    const body = await request.json();
+    const { id, isRead, markAllRead } = body;
 
-    const notification = await prisma.notification.update({
-      where: { id },
+    if (markAllRead || id === "all") {
+      await prisma.notification.updateMany({
+        where: {
+          userId: (session.user as any).id,
+          isRead: false,
+        },
+        data: {
+          isRead: true,
+          readAt: new Date(),
+        },
+      });
+      return NextResponse.json({ success: true });
+    }
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Missing notification id" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.notification.updateMany({
+      where: {
+        id,
+        userId: (session.user as any).id,
+      },
       data: {
-        isRead,
-        readAt: isRead ? new Date() : null,
+        isRead: isRead ?? true,
+        readAt: isRead !== false ? new Date() : null,
       },
     });
 
-    return NextResponse.json(notification);
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Failed to update notification" },
@@ -81,4 +106,3 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
-

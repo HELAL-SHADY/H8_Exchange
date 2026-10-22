@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import { Menu, X, Globe } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
+import { NotificationBell } from "@/components/notification-bell";
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -75,15 +76,17 @@ export function Navbar() {
             </Link>
 
             {session?.user ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <NotificationBell />
+
                 <Link
                   href="/my-orders"
                   className="text-gray-400 hover:text-[#F5B942] transition-colors"
                 >
                   {t("myOrders")}
                 </Link>
-                {(session.user as any).role === "ADMIN" ||
-                (session.user as any).role === "SUPER_ADMIN" ? (
+                {((session.user as any).role === "ADMIN" ||
+                (session.user as any).role === "SUPER_ADMIN") ? (
                   <Link
                     href="/admin"
                     className="px-4 py-2 bg-[#F5B942] text-[#0A0A0A] rounded-lg font-semibold hover:shadow-lg hover:shadow-[#F5B942]/50 transition-all"
@@ -118,8 +121,10 @@ export function Navbar() {
             </button>
           </div>
 
-          {/* Mobile Right Controls (Menu & Language) */}
-          <div className="md:hidden flex items-center gap-3">
+          {/* Mobile Right Controls (Menu & Language & Notifications) */}
+          <div className="md:hidden flex items-center gap-2">
+            {session?.user && <NotificationBell />}
+
             {/* Language Switcher for Mobile */}
             <button
               onClick={toggleLanguage}
@@ -130,7 +135,7 @@ export function Navbar() {
             </button>
 
             <button
-              className="text-[#F5B942]"
+              className="text-[#F5B942] p-1.5"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
