@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +45,11 @@ export async function POST(request: NextRequest) {
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
     });
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail({ toEmail: email, userName: name }).catch((err) =>
+      console.error("Welcome email failed:", err)
+    );
 
     return NextResponse.json(
       { message: "User registered successfully", user: { id: user.id, email: user.email, name: user.name } },
