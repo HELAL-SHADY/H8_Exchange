@@ -5,9 +5,10 @@ export function Card({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`bg-[#1A1A1A] rounded-xl border border-[#2D2D2D] p-6 shadow-lg ${className}`}
+      className={`liquid-glass liquid-glass-hover rounded-2xl p-6 relative overflow-hidden ${className}`}
       {...props}
     >
+      <div className="liquid-sheen" />
       {children}
     </div>
   );
@@ -31,7 +32,7 @@ export function CardTitle({
   ...props
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h2 className={`text-2xl font-bold text-white ${className}`} {...props}>
+    <h2 className={`text-2xl font-bold text-white tracking-wide ${className}`} {...props}>
       {children}
     </h2>
   );

@@ -21,7 +21,6 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
@@ -119,11 +118,11 @@ export function NotificationBell() {
   const getIcon = (type: string) => {
     switch (type) {
       case "ORDER_COMPLETED":
-        return <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />;
+        return <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />;
       case "ORDER_APPROVED":
-        return <CheckCircle2 className="w-5 h-5 text-[#F5B942] shrink-0" />;
+        return <CheckCircle2 className="w-5 h-5 text-[#F5B942] shrink-0 drop-shadow-[0_0_8px_rgba(245,185,66,0.5)]" />;
       case "ORDER_REJECTED":
-        return <XCircle className="w-5 h-5 text-rose-500 shrink-0" />;
+        return <XCircle className="w-5 h-5 text-rose-500 shrink-0 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]" />;
       default:
         return <Bell className="w-5 h-5 text-blue-400 shrink-0" />;
     }
@@ -131,41 +130,43 @@ export function NotificationBell() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Bell Button */}
+      {/* Liquid Glass Bell Button */}
       <button
         onClick={() => {
           setIsOpen(!isOpen);
           if (!isOpen) fetchNotifications();
         }}
-        className="relative p-2 rounded-lg bg-[#141414] hover:bg-[#202020] border border-[#2D2D2D] text-gray-300 hover:text-white transition-all focus:outline-none"
+        className="relative p-2 rounded-xl liquid-pill text-gray-300 hover:text-white transition-all focus:outline-none"
         title={locale === "ar" ? "الإشعارات" : "Notifications"}
         aria-label="Notifications"
       >
         <Bell className="w-5 h-5 text-gray-300 hover:text-[#F5B942] transition-colors" />
 
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 text-[11px] font-bold text-[#0A0A0A] bg-[#F5B942] rounded-full shadow-lg shadow-[#F5B942]/40 animate-pulse">
+          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 text-[11px] font-bold text-[#0A0A0A] bg-gradient-to-r from-[#F5B942] to-[#E6A430] rounded-full shadow-[0_0_12px_rgba(245,185,66,0.7)] animate-pulse">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Liquid Glass Dropdown Menu */}
       {isOpen && (
         <div
           dir={locale === "ar" ? "rtl" : "ltr"}
           className={`absolute ${
             locale === "ar" ? "left-0 sm:left-auto sm:right-0" : "right-0"
-          } mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-[#141414] border border-[#2D2D2D] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}
+          } mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-[#0E0E14]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}
         >
+          <div className="liquid-sheen" />
+
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-[#1A1A1A] border-b border-[#2D2D2D]">
+          <div className="flex items-center justify-between px-4 py-3 bg-white/[0.04] border-b border-white/[0.08]">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-white text-sm">
+              <span className="font-semibold text-white text-sm tracking-wide">
                 {locale === "ar" ? "الإشعارات" : "Notifications"}
               </span>
               {unreadCount > 0 && (
-                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-[#F5B942]/20 text-[#F5B942] border border-[#F5B942]/30">
+                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[#F5B942]/20 text-[#F5B942] border border-[#F5B942]/40 shadow-[0_0_10px_rgba(245,185,66,0.2)]">
                   {unreadCount} {locale === "ar" ? "جديد" : "new"}
                 </span>
               )}
@@ -183,9 +184,9 @@ export function NotificationBell() {
           </div>
 
           {/* List */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-[#242424]">
+          <div className="max-h-[380px] overflow-y-auto divide-y divide-white/[0.05]">
             {notifications.length === 0 ? (
-              <div className="py-10 px-4 text-center text-gray-500">
+              <div className="py-10 px-4 text-center text-gray-400">
                 <Bell className="w-8 h-8 mx-auto mb-2 opacity-30 text-gray-400" />
                 <p className="text-sm">
                   {locale === "ar" ? "لا توجد إشعارات حتى الآن" : "No notifications yet"}
@@ -198,8 +199,8 @@ export function NotificationBell() {
                   onClick={() => handleMarkAsRead(n.id, n.actionUrl)}
                   className={`p-3.5 transition-colors cursor-pointer flex gap-3 items-start ${
                     !n.isRead
-                      ? "bg-[#1C180E] hover:bg-[#252014] border-r-2 border-[#F5B942]"
-                      : "hover:bg-[#1A1A1A]"
+                      ? "bg-[#F5B942]/[0.07] hover:bg-[#F5B942]/[0.12] border-r-2 border-[#F5B942]"
+                      : "hover:bg-white/[0.04]"
                   }`}
                 >
                   <div className="mt-0.5">{getIcon(n.type)}</div>
@@ -208,7 +209,7 @@ export function NotificationBell() {
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <h4
                         className={`text-xs sm:text-sm font-semibold truncate ${
-                          !n.isRead ? "text-white" : "text-gray-300"
+                          !n.isRead ? "text-white font-bold" : "text-gray-300"
                         }`}
                       >
                         {n.title}
@@ -231,7 +232,7 @@ export function NotificationBell() {
                   </div>
 
                   {!n.isRead && (
-                    <span className="w-2 h-2 rounded-full bg-[#F5B942] mt-1.5 shrink-0" />
+                    <span className="w-2 h-2 rounded-full bg-[#F5B942] mt-1.5 shrink-0 shadow-[0_0_8px_rgba(245,185,66,0.8)]" />
                   )}
                 </div>
               ))
@@ -239,13 +240,13 @@ export function NotificationBell() {
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-2.5 bg-[#171717] border-t border-[#2D2D2D] text-center">
+          <div className="px-4 py-2.5 bg-white/[0.02] border-t border-white/[0.08] text-center">
             <button
               onClick={() => {
                 setIsOpen(false);
                 router.push("/my-orders");
               }}
-              className="text-xs text-gray-400 hover:text-[#F5B942] transition-colors"
+              className="text-xs text-gray-400 hover:text-[#F5B942] transition-colors font-medium"
             >
               {locale === "ar" ? "عرض جميع طلباتي ⬅" : "View all my orders ➡"}
             </button>

@@ -41,7 +41,7 @@ export default function ReviewsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0A0A0A]">
+      <main className="min-h-screen">
         <Navbar />
         <section className="py-12 px-4">
           <div className="max-w-4xl mx-auto text-center">
@@ -54,7 +54,7 @@ export default function ReviewsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A]">
+    <main className="min-h-screen">
       <Navbar />
 
       <section className="py-12 px-4">

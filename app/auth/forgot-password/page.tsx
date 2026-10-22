@@ -158,7 +158,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-4 py-8">
+    <main className="min-h-screen flex items-center justify-center px-4 py-8 relative z-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -363,7 +363,7 @@ export default function ForgotPasswordPage() {
                         const val = e.target.value.replace(/[^0-9]/g, "");
                         setCode(val);
                       }}
-                      className="w-full text-center text-3xl font-mono tracking-widest px-4 py-3 rounded-lg bg-[#2D2D2D] border border-[#3D3D3D] text-[#F5B942] placeholder-gray-600 focus:outline-none focus:border-[#F5B942] transition-colors"
+                      className="w-full text-center text-3xl font-mono tracking-widest px-4 py-3.5 rounded-xl bg-white/[0.04] backdrop-blur-xl border border-white/10 text-[#F5B942] placeholder-gray-600 focus:outline-none focus:border-[#F5B942]/70 focus:bg-white/[0.07] focus:ring-4 focus:ring-[#F5B942]/15 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]"
                       required
                       autoFocus
                     />

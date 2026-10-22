@@ -236,18 +236,20 @@ export default function TrackPage() {
   const transferDetails = getTransferDetails();
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A]">
+    <main className="min-h-screen">
       <Navbar />
 
-      <section className="py-12 px-4">
+      <section className="py-12 px-4 relative z-10">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <h1 className="text-4xl font-bold mb-4">{t("trackOrderTitle")}</h1>
-            <p className="text-gray-400">{t("trackOrderSubtitle")}</p>
+            <h1 className="text-4xl font-extrabold mb-3 tracking-tight">
+              {t("trackOrderTitle")}
+            </h1>
+            <p className="text-gray-400 font-light">{t("trackOrderSubtitle")}</p>
           </motion.div>
 
           <motion.div
@@ -279,7 +281,7 @@ export default function TrackPage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="max-w-2xl mx-auto mb-12 p-4 bg-red-600/20 border border-red-600 rounded-lg text-red-400"
+              className="max-w-2xl mx-auto mb-12 p-4 bg-red-600/20 border border-red-500/40 backdrop-blur-xl rounded-xl text-red-400 text-center font-medium"
             >
               {error}
             </motion.div>
@@ -293,24 +295,24 @@ export default function TrackPage() {
             >
               {/* PENDING PAYMENT STEP */}
               {order.status === "PENDING_PAYMENT" && transferDetails && (
-                <Card className="border-[#F5B942] border-2">
+                <Card className="border-[#F5B942]/60 shadow-[0_0_35px_rgba(245,185,66,0.15)]">
                   <CardContent className="py-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <Wallet className="text-[#F5B942] w-8 h-8" />
+                      <Wallet className="text-[#F5B942] w-8 h-8 drop-shadow-[0_0_10px_rgba(245,185,66,0.5)]" />
                       <h2 className="text-2xl font-bold text-white">{t("payPendingTitle")}</h2>
                     </div>
-                    <p className="text-gray-400 mb-6">{t("payPendingSubtitle")}</p>
+                    <p className="text-gray-400 mb-6 font-light">{t("payPendingSubtitle")}</p>
 
-                    <div className="bg-[#1A1A1A] p-5 rounded-xl border border-[#2D2D2D] mb-6 space-y-4">
+                    <div className="liquid-glass p-5 rounded-2xl mb-6 space-y-4">
                       <div>
-                        <p className="text-gray-500 text-sm mb-1">{t("transferToNumber").replace("{amount}", `${order.amount} ${order.type === "BUY" ? "EGP" : "USDT"}`)}</p>
+                        <p className="text-gray-400 text-sm mb-1">{t("transferToNumber").replace("{amount}", `${order.amount} ${order.type === "BUY" ? "EGP" : "USDT"}`)}</p>
                         <p className="font-bold text-[#F5B942] text-sm">{transferDetails.label}</p>
-                        <div className="flex items-center justify-between mt-2 bg-[#0A0A0A] p-3 rounded-lg border border-[#3D3D3D]">
-                          <span className="font-mono text-lg text-white select-all">{transferDetails.value}</span>
+                        <div className="flex items-center justify-between mt-2.5 liquid-pill p-3 rounded-xl">
+                          <span className="font-mono text-lg text-white select-all font-bold">{transferDetails.value}</span>
                           <button
                             type="button"
                             onClick={() => handleCopy(transferDetails.value)}
-                            className="text-xs text-[#F5B942] hover:underline"
+                            className="text-xs text-[#F5B942] hover:underline font-semibold"
                           >
                             {copied ? t("copied") : t("copyNumber")}
                           </button>
@@ -330,14 +332,14 @@ export default function TrackPage() {
                           accept="image/*"
                           onChange={(e) => setFile(e.target.files?.[0] || null)}
                           required
-                          className="w-full px-4 py-3 rounded-lg bg-[#2D2D2D] border border-[#3D3D3D] text-white focus:outline-none focus:border-[#F5B942] transition-colors duration-300 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-[#F5B942] file:text-[#0A0A0A] file:font-semibold hover:file:opacity-90 cursor-pointer text-sm"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] backdrop-blur-xl border border-white/10 text-white focus:outline-none focus:border-[#F5B942] transition-colors duration-300 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-[#F5B942] file:text-[#0A0A0A] file:font-semibold hover:file:opacity-90 cursor-pointer text-sm"
                         />
-                        <p className="text-xs text-gray-500 mt-1">{t("uploadScreenshotPlaceholder")}</p>
+                        <p className="text-xs text-gray-500 mt-1 font-light">{t("uploadScreenshotPlaceholder")}</p>
                       </FormGroup>
 
                       <PrimaryButton
                         type="submit"
-                        className="w-full"
+                        className="w-full py-3.5"
                         disabled={paymentLoading}
                       >
                         {paymentLoading ? t("processing") : t("markAsPaid")}
@@ -497,7 +499,7 @@ export default function TrackPage() {
                         </p>
 
                         {!session ? (
-                          <div className="p-4 bg-[#1A1A1A] rounded-lg border border-[#2D2D2D] text-center">
+                          <div className="p-5 liquid-glass rounded-2xl text-center">
                             <p className="text-gray-400 text-sm mb-3">
                               {t("loginToReview")}
                             </p>
@@ -506,7 +508,7 @@ export default function TrackPage() {
                               href={`/auth/login?callbackUrl=${encodeURIComponent(
                                 typeof window !== "undefined" ? window.location.href : ""
                               )}`}
-                              className="inline-block px-4 py-2 bg-[#F5B942] text-[#0A0A0A] rounded-lg font-semibold hover:shadow-lg hover:shadow-[#F5B942]/50 transition-all text-sm"
+                              className="inline-block px-5 py-2.5 bg-gradient-to-r from-[#F5B942] to-[#E6A430] text-[#0A0A0A] rounded-xl font-bold shadow-[0_0_20px_rgba(245,185,66,0.35)] hover:shadow-[0_0_30px_rgba(245,185,66,0.6)] transition-all text-sm"
                             >
                               {t("login")}
                             </a>
@@ -551,7 +553,7 @@ export default function TrackPage() {
                                 placeholder={t("writeOpinion")}
                                 value={reviewComment}
                                 onChange={(e) => setReviewComment(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-[#2D2D2D] border border-[#3D3D3D] text-white placeholder-gray-500 focus:outline-none focus:border-[#F5B942] transition-colors resize-none text-sm"
+                                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] backdrop-blur-xl border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-[#F5B942]/70 focus:bg-white/[0.07] focus:ring-4 focus:ring-[#F5B942]/15 transition-all resize-none text-sm"
                               />
                             </div>
 

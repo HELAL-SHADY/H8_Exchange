@@ -125,39 +125,39 @@ export default function MyOrdersPage() {
 
   if (status === "loading" || !session?.user) {
     return (
-      <main className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center">
         <p className="text-gray-400">{t("loadingOrders")}</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A]">
+    <main className="min-h-screen">
       <Navbar />
 
-      <section className="py-8 sm:py-12 px-4">
+      <section className="py-8 sm:py-12 px-4 relative z-10">
         <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-              {t("orderHistoryTitle1")} <span className="text-[#F5B942]">{t("orderHistoryTitle2")}</span>
+            <h1 className="text-3xl sm:text-4xl font-extrabold mb-2 tracking-tight">
+              {t("orderHistoryTitle1")} <span className="bg-gradient-to-r from-[#F5B942] to-[#E6A430] bg-clip-text text-transparent">{t("orderHistoryTitle2")}</span>
             </h1>
-            <p className="text-gray-400">{t("orderHistorySubtitle")}</p>
+            <p className="text-gray-400 font-light">{t("orderHistorySubtitle")}</p>
           </motion.div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+          <div className="flex gap-2.5 mb-6 overflow-x-auto pb-2">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
+                className={`px-5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
                   activeTab === tab.key
-                    ? "bg-[#F5B942] text-[#0A0A0A]"
-                    : "bg-[#1A1A1A] text-gray-400 hover:text-white border border-[#2D2D2D]"
+                    ? "liquid-pill-active"
+                    : "liquid-pill text-gray-300"
                 }`}
               >
                 {tab.label}

@@ -58,8 +58,8 @@ export default function SellPage() {
         body: JSON.stringify({
           type: "SELL",
           amount: parseFloat(orderData.amountUsdt),
-          binanceUid: orderData.receivingWallet,
-          walletNumber: orderData.binanceUid,
+          binanceUid: orderData.binanceUid,
+          walletNumber: orderData.receivingWallet,
           paymentMethod,
           receiveMethod,
         }),
@@ -68,7 +68,7 @@ export default function SellPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to create order");
 
-      alert(locale === "ar" ? "تم إنشاء الطلب بنجاح! يرجى إتمام عملية الدفع." : "Order created successfully! Please complete the payment.");
+      alert(locale === "ar" ? "تم إنشاء الطلب بنجاح! يرجى إرسال الـ USDT وإرفاق إثبات الدفع." : "Order created successfully! Please send USDT and upload payment proof.");
       router.push(`/track?orderId=${data.id}`);
     } catch (error) {
       alert((error as Error).message);
@@ -78,21 +78,21 @@ export default function SellPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A]">
+    <main className="min-h-screen">
       <Navbar />
 
-      <section className="py-8 sm:py-12 px-4">
+      <section className="py-8 sm:py-12 px-4 relative z-10">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-8 sm:mb-12"
           >
-            <h1 className="text-3xl sm:text-4xl font-bold mb-4">
+            <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
               {locale === "ar" ? "بيع" : "Sell"}{" "}
-              <span className="text-[#F5B942]">USDT</span>
+              <span className="bg-gradient-to-r from-[#F5B942] to-[#E6A430] bg-clip-text text-transparent">USDT</span>
             </h1>
-            <p className="text-gray-400">{t("startSellNow")}</p>
+            <p className="text-gray-400 font-light">{t("startSellNow")}</p>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -103,8 +103,8 @@ export default function SellPage() {
               className="lg:col-span-2"
             >
               <Card>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                <CardContent className="p-2 sm:p-4">
+                  <form onSubmit={handleSubmit} className="space-y-5">
                     {/* Payment Method Switcher */}
                     <FormGroup>
                       <Label>{t("paymentMethodSell")}</Label>
@@ -112,10 +112,10 @@ export default function SellPage() {
                         <button
                           type="button"
                           onClick={() => setPaymentMethod("BINANCE_PAY")}
-                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                             paymentMethod === "BINANCE_PAY"
-                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                              ? "liquid-pill-active"
+                              : "liquid-pill text-gray-300"
                           }`}
                         >
                           Binance UID
@@ -123,10 +123,10 @@ export default function SellPage() {
                         <button
                           type="button"
                           onClick={() => setPaymentMethod("BYBIT_PAY")}
-                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                             paymentMethod === "BYBIT_PAY"
-                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                              ? "liquid-pill-active"
+                              : "liquid-pill text-gray-300"
                           }`}
                         >
                           Bybit Pay
@@ -141,10 +141,10 @@ export default function SellPage() {
                         <button
                           type="button"
                           onClick={() => setReceiveMethod("VODAFONE_CASH")}
-                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                             receiveMethod === "VODAFONE_CASH"
-                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                              ? "liquid-pill-active"
+                              : "liquid-pill text-gray-300"
                           }`}
                         >
                           Vodafone Cash
@@ -152,10 +152,10 @@ export default function SellPage() {
                         <button
                           type="button"
                           onClick={() => setReceiveMethod("INSTAPAY")}
-                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                             receiveMethod === "INSTAPAY"
-                              ? "bg-[#F5B942] text-[#0A0A0A] border-[#F5B942]"
-                              : "bg-[#2D2D2D] text-gray-300 border-[#3D3D3D] hover:border-[#F5B942]"
+                              ? "liquid-pill-active"
+                              : "liquid-pill text-gray-300"
                           }`}
                         >
                           InstaPay
@@ -184,18 +184,10 @@ export default function SellPage() {
                     </FormGroup>
 
                     <FormGroup>
-                      <Label htmlFor="receivingWallet">
-                        {receiveMethod === "VODAFONE_CASH"
-                          ? t("receivingWalletLabel")
-                          : t("receivingInstapayLabel")}
-                      </Label>
+                      <Label htmlFor="receivingWallet">{t("receivingWalletLabel")}</Label>
                       <Input
                         id="receivingWallet"
-                        placeholder={
-                          receiveMethod === "VODAFONE_CASH"
-                            ? "201000000000"
-                            : "201000000000 or username@instapay"
-                        }
+                        placeholder="01012345678"
                         value={orderData.receivingWallet}
                         onChange={(e) =>
                           setOrderData({
@@ -217,14 +209,17 @@ export default function SellPage() {
                         onChange={handleAmountChange}
                         required
                       />
-                      <p className="text-sm text-[#F5B942] mt-2">
-                        {t("willReceive")}: {amountEgp} EGP
-                      </p>
+                      <div className="mt-2.5 p-3 rounded-xl liquid-pill flex items-center justify-between">
+                        <span className="text-xs text-gray-300">{t("willReceive")}:</span>
+                        <span className="text-sm font-extrabold text-[#F5B942] drop-shadow-[0_0_10px_rgba(245,185,66,0.3)]">
+                          {amountEgp} EGP
+                        </span>
+                      </div>
                     </FormGroup>
 
                     <PrimaryButton
                       type="submit"
-                      className="w-full"
+                      className="w-full py-3.5"
                       disabled={loading}
                     >
                       {loading ? t("processing") : t("createOrderBtn")}
@@ -240,23 +235,23 @@ export default function SellPage() {
               animate={{ opacity: 1, x: 0 }}
               className="space-y-6"
             >
-              <Card>
-                <CardContent>
-                  <h3 className="font-bold mb-4">{t("currentPrice")}</h3>
+              <Card className="liquid-glass-gold">
+                <CardContent className="p-2 sm:p-4">
+                  <h3 className="font-bold mb-3 text-white">{t("currentPrice")}</h3>
                   <div className="text-center py-4">
-                    <p className="text-gray-400 text-sm mb-2">{t("sellRate")}</p>
-                    <p className="text-3xl font-bold text-[#F5B942]">
+                    <p className="text-gray-300 text-sm mb-1.5">{t("sellRate")}</p>
+                    <p className="text-4xl font-extrabold text-[#F5B942] drop-shadow-[0_0_15px_rgba(245,185,66,0.4)]">
                       {exchangeRate}
                     </p>
-                    <p className="text-xs text-gray-500 mt-2">{t("egpPerUsdt")}</p>
+                    <p className="text-xs text-gray-400 mt-2 font-medium">{t("egpPerUsdt")}</p>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent>
-                  <h3 className="font-bold mb-4">{t("importantNotes")}</h3>
-                  <ul className="space-y-2 text-sm text-gray-400 list-disc list-inside">
+                <CardContent className="p-2 sm:p-4">
+                  <h3 className="font-bold mb-3 text-white">{t("importantNotes")}</h3>
+                  <ul className="space-y-2 text-sm text-gray-400 list-disc list-inside font-light">
                     {(t("sellNotes") as string[]).map((note, idx) => (
                       <li key={idx}>{note}</li>
                     ))}

@@ -4,16 +4,16 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import {
   BarChart3,
-  Settings,
-  BookOpen,
   FileText,
+  BookOpen,
+  Settings,
+  LogOut,
   Menu,
   X,
-  LogOut,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
 
 export default function AdminLayout({
   children,
@@ -28,17 +28,17 @@ export default function AdminLayout({
     if (status === "unauthenticated") {
       router.push("/auth/login");
     } else if (
-      session?.user &&
-      !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role)
+      status === "authenticated" &&
+      !["ADMIN", "SUPER_ADMIN"].includes((session?.user as any)?.role)
     ) {
       router.push("/");
     }
   }, [status, session, router]);
 
-  if (status === "loading" || !session?.user) {
+  if (status === "loading" || !session) {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-white">جاري التحميل...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-400">جاري التحميل...</p>
       </div>
     );
   }
@@ -51,12 +51,12 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex">
+    <div className="min-h-screen flex relative z-10">
 
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -72,9 +72,11 @@ export default function AdminLayout({
         z-50
         w-[260px]
         h-screen
-        bg-[#1A1A1A]
+        bg-[#0B0B10]/80
+        backdrop-blur-2xl
         border-l
-        border-[#2D2D2D]
+        border-white/10
+        shadow-2xl
         flex
         flex-col
         transition-transform
@@ -83,8 +85,9 @@ export default function AdminLayout({
         ${sidebarOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >
-        <div className="p-6 border-b border-[#2D2D2D]">
-          <h1 className="text-2xl font-bold text-[#F5B942]">
+        <div className="liquid-sheen" />
+        <div className="p-6 border-b border-white/10">
+          <h1 className="text-2xl font-extrabold bg-gradient-to-r from-[#F5B942] to-[#E6A430] bg-clip-text text-transparent">
             H8 Admin
           </h1>
         </div>
@@ -105,20 +108,22 @@ export default function AdminLayout({
                   py-3
                   rounded-xl
                   text-gray-300
-                  hover:bg-[#2D2D2D]
+                  hover:bg-white/[0.06]
                   hover:text-[#F5B942]
-                  transition
+                  hover:border-white/10
+                  border border-transparent
+                  transition-all
                   "
                 >
                   <Icon size={20} />
-                  <span>{item.label}</span>
+                  <span className="font-medium text-sm">{item.label}</span>
                 </div>
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-[#2D2D2D]">
+        <div className="p-4 border-t border-white/10">
           <button
             onClick={() => signOut()}
             className="
@@ -128,10 +133,12 @@ export default function AdminLayout({
             justify-center
             gap-2
             rounded-xl
-            bg-red-600
+            bg-red-600/80
+            hover:bg-red-600
             py-3
             text-white
-            hover:bg-red-700
+            font-medium
+            border border-red-500/30
             transition
             "
           >
@@ -142,7 +149,7 @@ export default function AdminLayout({
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col lg:ml-0">
+      <div className="flex-1 flex flex-col lg:ml-0 min-w-0">
 
         {/* Header */}
         <header
@@ -150,29 +157,32 @@ export default function AdminLayout({
           sticky
           top-0
           z-30
-          bg-[#1A1A1A]
+          bg-[#0B0B10]/70
+          backdrop-blur-2xl
           border-b
-          border-[#2D2D2D]
-          px-4
+          border-white/10
+          px-6
           py-4
           flex
           items-center
           justify-between
+          shadow-lg
           "
         >
+          <div className="liquid-sheen" />
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-[#F5B942] lg:hidden"
+            className="text-[#F5B942] lg:hidden p-1.5 liquid-pill rounded-xl"
           >
-            {sidebarOpen ? <X size={26} /> : <Menu size={26} />}
+            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
           <div className="text-right">
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 text-xs">
               مرحباً
             </p>
-            <p className="font-bold">
-              {session.user.name}
+            <p className="font-bold text-white text-sm">
+              {session?.user?.name || "Admin"}
             </p>
           </div>
         </header>
