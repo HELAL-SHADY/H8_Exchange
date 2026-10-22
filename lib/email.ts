@@ -36,6 +36,7 @@ export async function sendPasswordResetEmail({
     return { success: true };
   }
 
+  try {
     const isGmail = host.toLowerCase().includes("gmail");
     const transporter = nodemailer.createTransport(
       isGmail
