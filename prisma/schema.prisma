@@ -48,14 +48,14 @@ model Order {
   amount Float
   status OrderStatus @default(PENDING_REVIEW)
 
-  // Payment method used for this order (كيف دفع/أرسل العميل)
+  // Payment method used for this order (ÙƒÙŠÙ Ø¯ÙØ¹/Ø£Ø±Ø³Ù„ Ø§Ù„Ø¹Ù…ÙŠÙ„)
   // BUY orders:  VODAFONE_CASH | INSTAPAY
   // SELL orders: BINANCE_PAY   | BYBIT_PAY
   paymentMethod String?
 
-  // Receive method (إزاي العميل عايز يستلم)
-  // BUY orders:  BINANCE_PAY   | BYBIT_PAY   (يستلم USDT)
-  // SELL orders: VODAFONE_CASH | INSTAPAY    (يستلم EGP)
+  // Receive method (Ø¥Ø²Ø§ÙŠ Ø§Ù„Ø¹Ù…ÙŠÙ„ Ø¹Ø§ÙŠØ² ÙŠØ³ØªÙ„Ù…)
+  // BUY orders:  BINANCE_PAY   | BYBIT_PAY   (ÙŠØ³ØªÙ„Ù… USDT)
+  // SELL orders: VODAFONE_CASH | INSTAPAY    (ÙŠØ³ØªÙ„Ù… EGP)
   receiveMethod String?
 
   // User information
@@ -227,6 +227,10 @@ model SiteSettings {
   // Enable / Disable Orders
   buyEnabled  Boolean @default(true)
   sellEnabled Boolean @default(true)
+
+  // Enable / Disable Payment Methods
+  instapayEnabled Boolean @default(true)
+  vodafoneEnabled Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

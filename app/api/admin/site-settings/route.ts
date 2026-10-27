@@ -13,7 +13,7 @@ async function checkAdminRole(session: any) {
   return true;
 }
 
-// GET - جلب إعدادات الموقع (متاح للجميع لعرض أرقام الدفع)
+// GET - جلب إعدادات الموقع (متاح للجميع لعرض أرقام الدفع وحالة الصيانة)
 export async function GET() {
   try {
     let settings = await prisma.siteSettings.findFirst();
@@ -30,6 +30,8 @@ export async function GET() {
           announcement: "",
           buyEnabled: true,
           sellEnabled: true,
+          instapayEnabled: true,
+          vodafoneEnabled: true,
         },
       });
     }
@@ -63,6 +65,8 @@ export async function PUT(request: NextRequest) {
       announcement,
       buyEnabled,
       sellEnabled,
+      instapayEnabled,
+      vodafoneEnabled,
     } = body;
 
     const existing = await prisma.siteSettings.findFirst();
@@ -81,6 +85,8 @@ export async function PUT(request: NextRequest) {
           ...(announcement !== undefined && { announcement }),
           ...(buyEnabled !== undefined && { buyEnabled }),
           ...(sellEnabled !== undefined && { sellEnabled }),
+          ...(instapayEnabled !== undefined && { instapayEnabled }),
+          ...(vodafoneEnabled !== undefined && { vodafoneEnabled }),
         },
       });
     } else {
@@ -95,6 +101,8 @@ export async function PUT(request: NextRequest) {
           announcement: announcement || "",
           buyEnabled: buyEnabled ?? true,
           sellEnabled: sellEnabled ?? true,
+          instapayEnabled: instapayEnabled ?? true,
+          vodafoneEnabled: vodafoneEnabled ?? true,
         },
       });
     }

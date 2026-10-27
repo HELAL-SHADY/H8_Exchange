@@ -23,6 +23,66 @@ interface SiteSettings {
   announcement: string;
   buyEnabled: boolean;
   sellEnabled: boolean;
+  instapayEnabled: boolean;
+  vodafoneEnabled: boolean;
+}
+
+// ===== Toggle Switch Component =====
+function ToggleSwitch({
+  enabled,
+  onChange,
+  label,
+  description,
+  enabledColor = "bg-green-500",
+  disabledLabel = "مغلق • جاري الصيانة",
+  enabledLabel = "مفعّل",
+}: {
+  enabled: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  description?: string;
+  enabledColor?: string;
+  disabledLabel?: string;
+  enabledLabel?: string;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+        enabled
+          ? "border-green-500/30 bg-green-500/5"
+          : "border-red-500/30 bg-red-500/5"
+      }`}
+    >
+      <div className="flex-1 min-w-0 ml-4">
+        <p className="font-semibold text-white text-sm">{label}</p>
+        {description && (
+          <p className="text-xs text-gray-400 mt-0.5 truncate">{description}</p>
+        )}
+        <span
+          className={`inline-block mt-1 text-xs font-bold px-2 py-0.5 rounded-full ${
+            enabled
+              ? "bg-green-500/20 text-green-400"
+              : "bg-red-500/20 text-red-400"
+          }`}
+        >
+          {enabled ? `✅ ${enabledLabel}` : `🔒 ${disabledLabel}`}
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!enabled)}
+        className={`relative inline-flex items-center h-7 w-14 rounded-full transition-colors duration-300 focus:outline-none flex-shrink-0 ${
+          enabled ? enabledColor : "bg-gray-600"
+        }`}
+      >
+        <span
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+            enabled ? "translate-x-8" : "translate-x-1"
+          }`}
+        />
+      </button>
+    </div>
+  );
 }
 
 export default function AdminSettingsPage() {
@@ -48,6 +108,8 @@ export default function AdminSettingsPage() {
     announcement: "",
     buyEnabled: true,
     sellEnabled: true,
+    instapayEnabled: true,
+    vodafoneEnabled: true,
   });
 
   useEffect(() => {
@@ -83,6 +145,8 @@ export default function AdminSettingsPage() {
           announcement: data.announcement || "",
           buyEnabled: data.buyEnabled ?? true,
           sellEnabled: data.sellEnabled ?? true,
+          instapayEnabled: data.instapayEnabled ?? true,
+          vodafoneEnabled: data.vodafoneEnabled ?? true,
         });
       }
     } catch (error) {
@@ -146,8 +210,91 @@ export default function AdminSettingsPage() {
         <p className="text-gray-400 mt-2">إدارة أسعار الصرف وإعدادات الدفع</p>
       </motion.div>
 
-      {/* ===== Payment Settings ===== */}
+      {/* ===== Operations Control ===== */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <Card>
+          <CardContent>
+            <h2 className="text-xl sm:text-2xl font-bold mb-1">🔧 التحكم في العمليات</h2>
+            <p className="text-sm text-gray-400 mb-6">
+              تشغيل أو إيقاف عمليات الشراء والبيع — عند الإيقاف يظهر للمستخدم رسالة صيانة
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <ToggleSwitch
+                enabled={siteSettings.buyEnabled}
+                onChange={(v) => setSiteSettings({ ...siteSettings, buyEnabled: v })}
+                label="عملية الشراء (Buy USDT)"
+                description="السماح للمستخدمين بشراء USDT مقابل EGP"
+                enabledColor="bg-green-500"
+                enabledLabel="الشراء متاح"
+                disabledLabel="الشراء موقوف"
+              />
+              <ToggleSwitch
+                enabled={siteSettings.sellEnabled}
+                onChange={(v) => setSiteSettings({ ...siteSettings, sellEnabled: v })}
+                label="عملية البيع (Sell USDT)"
+                description="السماح للمستخدمين ببيع USDT مقابل EGP"
+                enabledColor="bg-green-500"
+                enabledLabel="البيع متاح"
+                disabledLabel="البيع موقوف"
+              />
+            </div>
+
+            <h2 className="text-xl font-bold mb-1">💳 التحكم في طرق الدفع المحلية</h2>
+            <p className="text-sm text-gray-400 mb-4">
+              إيقاف طريقة دفع بعينها — يظهر للمستخدم رسالة صيانة عند محاولة استخدامها
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ToggleSwitch
+                enabled={siteSettings.instapayEnabled}
+                onChange={(v) => setSiteSettings({ ...siteSettings, instapayEnabled: v })}
+                label="InstaPay 💠"
+                description="الدفع / الاستلام عبر InstaPay"
+                enabledColor="bg-blue-500"
+                enabledLabel="InstaPay متاح"
+                disabledLabel="InstaPay موقوف"
+              />
+              <ToggleSwitch
+                enabled={siteSettings.vodafoneEnabled}
+                onChange={(v) => setSiteSettings({ ...siteSettings, vodafoneEnabled: v })}
+                label="Vodafone Cash 📱"
+                description="الدفع / الاستلام عبر Vodafone Cash"
+                enabledColor="bg-red-500"
+                enabledLabel="Vodafone متاح"
+                disabledLabel="Vodafone موقوف"
+              />
+            </div>
+
+            {/* Status Summary */}
+            {(!siteSettings.buyEnabled || !siteSettings.sellEnabled || !siteSettings.instapayEnabled || !siteSettings.vodafoneEnabled) && (
+              <div className="mt-4 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
+                <p className="text-yellow-400 text-sm font-semibold mb-2">⚠️ تحذير — خدمات موقوفة حاليًا:</p>
+                <ul className="text-xs text-yellow-300 space-y-1">
+                  {!siteSettings.buyEnabled && <li>• عملية الشراء موقوفة — المستخدمون لا يستطيعون شراء USDT</li>}
+                  {!siteSettings.sellEnabled && <li>• عملية البيع موقوفة — المستخدمون لا يستطيعون بيع USDT</li>}
+                  {!siteSettings.instapayEnabled && <li>• InstaPay موقوف — لن يظهر كخيار للمستخدمين</li>}
+                  {!siteSettings.vodafoneEnabled && <li>• Vodafone Cash موقوف — لن يظهر كخيار للمستخدمين</li>}
+                </ul>
+              </div>
+            )}
+
+            <div className="mt-4">
+              <PrimaryButton
+                type="button"
+                onClick={handleSiteSettingsSubmit}
+                className="w-full sm:w-auto"
+                disabled={savingSettings}
+              >
+                {savingSettings ? "جاري الحفظ..." : "💾 حفظ إعدادات التشغيل"}
+              </PrimaryButton>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ===== Payment Settings ===== */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
         <Card>
           <CardContent>
             <h2 className="text-xl sm:text-2xl font-bold mb-1">إعدادات الدفع</h2>
@@ -411,6 +558,8 @@ export default function AdminSettingsPage() {
           <CardContent>
             <h3 className="text-lg font-bold mb-4">معلومات هامة</h3>
             <ul className="space-y-2 text-sm text-gray-400">
+              <li>• عند إيقاف الشراء أو البيع، يظهر للمستخدمين رسالة «جاري الصيانة وسيتاح قريبًا»</li>
+              <li>• عند إيقاف InstaPay أو Vodafone Cash، يتم إخفاء الخيار وعرض رسالة صيانة عند الضغط عليه</li>
               <li>• عند تغيير رقم Vodafone Cash أو InstaPay، يظهر الرقم الجديد فوراً لكل العملاء</li>
               <li>• عند تغيير Binance UID أو Bybit Pay ID، يظهر فوراً في صفحة البيع</li>
               <li>• عند تحديث الأسعار، تُحدَّث تلقائياً في جميع الصفحات</li>

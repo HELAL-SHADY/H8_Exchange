@@ -58,6 +58,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // التحقق من إعدادات الموقع وتوفر العمليات وطرق الدفع
+    const siteSettings = await prisma.siteSettings.findFirst();
+    if (siteSettings) {
+      if (type === "BUY" && !siteSettings.buyEnabled) {
+        return NextResponse.json(
+          { error: "عمليات الشراء متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
+          { status: 503 }
+        );
+      }
+      if (type === "SELL" && !siteSettings.sellEnabled) {
+        return NextResponse.json(
+          { error: "عمليات البيع متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
+          { status: 503 }
+        );
+      }
+      if (
+        (paymentMethod === "INSTAPAY" || receiveMethod === "INSTAPAY") &&
+        !siteSettings.instapayEnabled
+      ) {
+        return NextResponse.json(
+          { error: "خدمة إنستا باي (InstaPay) متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
+          { status: 503 }
+        );
+      }
+      if (
+        (paymentMethod === "VODAFONE_CASH" || receiveMethod === "VODAFONE_CASH") &&
+        !siteSettings.vodafoneEnabled
+      ) {
+        return NextResponse.json(
+          { error: "خدمة فودافون كاش (Vodafone Cash) متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
+          { status: 503 }
+        );
+      }
+    }
+
     // جلب بيانات المستخدم (الاسم ورقم الهاتف) من حسابه المسجل
     const user = await prisma.user.findUnique({
       where: { id: (session.user as any).id },
