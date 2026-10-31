@@ -25,6 +25,8 @@ interface SiteSettings {
   sellEnabled: boolean;
   instapayEnabled: boolean;
   vodafoneEnabled: boolean;
+  binanceEnabled: boolean;
+  bybitEnabled: boolean;
 }
 
 // ===== Toggle Switch Component =====
@@ -110,6 +112,8 @@ export default function AdminSettingsPage() {
     sellEnabled: true,
     instapayEnabled: true,
     vodafoneEnabled: true,
+    binanceEnabled: true,
+    bybitEnabled: true,
   });
 
   useEffect(() => {
@@ -147,6 +151,8 @@ export default function AdminSettingsPage() {
           sellEnabled: data.sellEnabled ?? true,
           instapayEnabled: data.instapayEnabled ?? true,
           vodafoneEnabled: data.vodafoneEnabled ?? true,
+          binanceEnabled: data.binanceEnabled ?? true,
+          bybitEnabled: data.bybitEnabled ?? true,
         });
       }
     } catch (error) {
@@ -240,9 +246,9 @@ export default function AdminSettingsPage() {
               />
             </div>
 
-            <h2 className="text-xl font-bold mb-1">💳 التحكم في طرق الدفع المحلية</h2>
+            <h2 className="text-xl font-bold mb-1">💳 التحكم في طرق الدفع والاستلام</h2>
             <p className="text-sm text-gray-400 mb-4">
-              إيقاف طريقة دفع بعينها — يظهر للمستخدم رسالة صيانة عند محاولة استخدامها
+              إيقاف طريقة دفع أو استلام بعينها — يظهر للمستخدم رسالة صيانة عند محاولة استخدامها
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -264,17 +270,42 @@ export default function AdminSettingsPage() {
                 enabledLabel="Vodafone متاح"
                 disabledLabel="Vodafone موقوف"
               />
+              <ToggleSwitch
+                enabled={siteSettings.binanceEnabled}
+                onChange={(v) => setSiteSettings({ ...siteSettings, binanceEnabled: v })}
+                label="Binance UID / Pay 🔑"
+                description="الدفع / الاستلام عبر Binance"
+                enabledColor="bg-yellow-500"
+                enabledLabel="Binance متاح"
+                disabledLabel="Binance موقوف"
+              />
+              <ToggleSwitch
+                enabled={siteSettings.bybitEnabled}
+                onChange={(v) => setSiteSettings({ ...siteSettings, bybitEnabled: v })}
+                label="Bybit Pay ID 💠"
+                description="الدفع / الاستلام عبر Bybit"
+                enabledColor="bg-orange-500"
+                enabledLabel="Bybit متاح"
+                disabledLabel="Bybit موقوف"
+              />
             </div>
 
             {/* Status Summary */}
-            {(!siteSettings.buyEnabled || !siteSettings.sellEnabled || !siteSettings.instapayEnabled || !siteSettings.vodafoneEnabled) && (
+            {(!siteSettings.buyEnabled ||
+              !siteSettings.sellEnabled ||
+              !siteSettings.instapayEnabled ||
+              !siteSettings.vodafoneEnabled ||
+              !siteSettings.binanceEnabled ||
+              !siteSettings.bybitEnabled) && (
               <div className="mt-4 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
                 <p className="text-yellow-400 text-sm font-semibold mb-2">⚠️ تحذير — خدمات موقوفة حاليًا:</p>
                 <ul className="text-xs text-yellow-300 space-y-1">
                   {!siteSettings.buyEnabled && <li>• عملية الشراء موقوفة — المستخدمون لا يستطيعون شراء USDT</li>}
                   {!siteSettings.sellEnabled && <li>• عملية البيع موقوفة — المستخدمون لا يستطيعون بيع USDT</li>}
-                  {!siteSettings.instapayEnabled && <li>• InstaPay موقوف — لن يظهر كخيار للمستخدمين</li>}
-                  {!siteSettings.vodafoneEnabled && <li>• Vodafone Cash موقوف — لن يظهر كخيار للمستخدمين</li>}
+                  {!siteSettings.instapayEnabled && <li>• InstaPay موقوف — متوقف للصيانة لدى المستخدمين</li>}
+                  {!siteSettings.vodafoneEnabled && <li>• Vodafone Cash موقوف — متوقف للصيانة لدى المستخدمين</li>}
+                  {!siteSettings.binanceEnabled && <li>• Binance Pay / UID موقوف — متوقف للصيانة لدى المستخدمين</li>}
+                  {!siteSettings.bybitEnabled && <li>• Bybit Pay موقوف — متوقف للصيانة لدى المستخدمين</li>}
                 </ul>
               </div>
             )}
@@ -326,15 +357,15 @@ export default function AdminSettingsPage() {
                   </p>
                 </FormGroup>
 
-                {/* InstaPay */}
+                {/* InstaPay Link */}
                 <FormGroup>
                   <Label htmlFor="instapayNumber">
-                    رقم / رابط InstaPay 💠
+                    رابط دفع InstaPay المباشر 🔗
                   </Label>
                   <Input
                     id="instapayNumber"
                     type="text"
-                    placeholder="مثال: 01069053242 أو yourname@instapay"
+                    placeholder="مثال: https://ipn.eg/S/username/instapay/..."
                     value={siteSettings.instapayNumber}
                     onChange={(e) =>
                       setSiteSettings({
@@ -344,7 +375,7 @@ export default function AdminSettingsPage() {
                     }
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    يُعرض للعملاء كطريقة بديلة في صفحة الشراء (EGP)
+                    رابط الدفع المباشر عبر InstaPay — عند اختيار InstaPay يظهر زر &quot;دفع&quot; ليفتح هذا الرابط للعميل
                   </p>
                 </FormGroup>
 
@@ -413,8 +444,8 @@ export default function AdminSettingsPage() {
                     )}
                     {siteSettings.instapayNumber && (
                       <div>
-                        <span className="text-gray-500">InstaPay:</span>
-                        <span className="text-white font-semibold mr-2">
+                        <span className="text-gray-500">InstaPay Link:</span>
+                        <span className="text-white font-semibold mr-2 break-all">
                           {siteSettings.instapayNumber}
                         </span>
                       </div>
@@ -559,12 +590,12 @@ export default function AdminSettingsPage() {
             <h3 className="text-lg font-bold mb-4">معلومات هامة</h3>
             <ul className="space-y-2 text-sm text-gray-400">
               <li>• عند إيقاف الشراء أو البيع، يظهر للمستخدمين رسالة «جاري الصيانة وسيتاح قريبًا»</li>
-              <li>• عند إيقاف InstaPay أو Vodafone Cash، يتم إخفاء الخيار وعرض رسالة صيانة عند الضغط عليه</li>
-              <li>• عند تغيير رقم Vodafone Cash أو InstaPay، يظهر الرقم الجديد فوراً لكل العملاء</li>
+              <li>• عند إيقاف أي طريقة دفع (Vodafone Cash, InstaPay, Binance UID, Bybit Pay)، يتم إخفاء الخيار وعرض رسالة صيانة عند الضغط عليه</li>
+              <li>• عند تغيير رابط دفع InstaPay، يظهر زر «دفع» للعميل ويفتح الرابط المباشر فوراً</li>
               <li>• عند تغيير Binance UID أو Bybit Pay ID، يظهر فوراً في صفحة البيع</li>
               <li>• عند تحديث الأسعار، تُحدَّث تلقائياً في جميع الصفحات</li>
               <li>• كل تغيير يُسجَّل في سجل العمليات</li>
-              <li>• تأكد من صحة أرقام الدفع قبل الحفظ لتجنب أخطاء التحويلات</li>
+              <li>• تأكد من صحة بيانات الدفع قبل الحفظ لتجنب أخطاء التحويلات</li>
             </ul>
           </CardContent>
         </Card>

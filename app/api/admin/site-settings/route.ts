@@ -32,6 +32,8 @@ export async function GET() {
           sellEnabled: true,
           instapayEnabled: true,
           vodafoneEnabled: true,
+          binanceEnabled: true,
+          bybitEnabled: true,
         },
       });
     }
@@ -67,6 +69,8 @@ export async function PUT(request: NextRequest) {
       sellEnabled,
       instapayEnabled,
       vodafoneEnabled,
+      binanceEnabled,
+      bybitEnabled,
     } = body;
 
     const existing = await prisma.siteSettings.findFirst();
@@ -87,6 +91,8 @@ export async function PUT(request: NextRequest) {
           ...(sellEnabled !== undefined && { sellEnabled }),
           ...(instapayEnabled !== undefined && { instapayEnabled }),
           ...(vodafoneEnabled !== undefined && { vodafoneEnabled }),
+          ...(binanceEnabled !== undefined && { binanceEnabled }),
+          ...(bybitEnabled !== undefined && { bybitEnabled }),
         },
       });
     } else {
@@ -103,6 +109,8 @@ export async function PUT(request: NextRequest) {
           sellEnabled: sellEnabled ?? true,
           instapayEnabled: instapayEnabled ?? true,
           vodafoneEnabled: vodafoneEnabled ?? true,
+          binanceEnabled: binanceEnabled ?? true,
+          bybitEnabled: bybitEnabled ?? true,
         },
       });
     }

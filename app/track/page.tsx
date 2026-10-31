@@ -7,7 +7,7 @@ import { Input, FormGroup, Label } from "@/components/ui/form";
 import { PrimaryButton } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Clock, CheckCircle, AlertCircle, XCircle, Star, Wallet, ArrowRightLeft, CreditCard } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, XCircle, Star, Wallet, ArrowRightLeft, CreditCard, ExternalLink } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useTranslation } from "@/lib/i18n";
 
@@ -214,8 +214,9 @@ export default function TrackPage() {
         };
       } else {
         return {
-          label: "InstaPay Address",
+          label: "InstaPay Link",
           value: siteSettings.instapayNumber,
+          isLink: true,
         };
       }
     } else {
@@ -307,15 +308,31 @@ export default function TrackPage() {
                       <div>
                         <p className="text-gray-400 text-sm mb-1">{t("transferToNumber").replace("{amount}", `${order.amount} ${order.type === "BUY" ? "EGP" : "USDT"}`)}</p>
                         <p className="font-bold text-[#F5B942] text-sm">{transferDetails.label}</p>
-                        <div className="flex items-center justify-between mt-2.5 liquid-pill p-3 rounded-xl">
-                          <span className="font-mono text-lg text-white select-all font-bold">{transferDetails.value}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(transferDetails.value)}
-                            className="text-xs text-[#F5B942] hover:underline font-semibold"
-                          >
-                            {copied ? t("copied") : t("copyNumber")}
-                          </button>
+                        <div className="flex items-center justify-between mt-2.5 liquid-pill p-3 rounded-xl gap-2">
+                          <span className="font-mono text-base sm:text-lg text-white select-all font-bold break-all flex-1">
+                            {transferDetails.value}
+                          </span>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {transferDetails.isLink ? (
+                              <a
+                                href={transferDetails.value.startsWith("http://") || transferDetails.value.startsWith("https://") ? transferDetails.value : "https://" + transferDetails.value}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#F5B942] via-[#F8C65D] to-[#E6A430] text-[#0A0A0A] font-bold text-sm shadow-[0_4px_15px_rgba(245,185,66,0.35)] hover:scale-105 transition-all"
+                              >
+                                <span>{t("payNow") || "دفع"}</span>
+                                <ExternalLink size={15} />
+                              </a>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(transferDetails.value)}
+                                className="text-xs text-[#F5B942] hover:underline font-semibold"
+                              >
+                                {copied ? t("copied") : t("copyNumber")}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

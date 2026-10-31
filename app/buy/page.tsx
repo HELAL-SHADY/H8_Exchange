@@ -19,6 +19,8 @@ interface SiteSettingsState {
   buyEnabled: boolean;
   vodafoneEnabled: boolean;
   instapayEnabled: boolean;
+  binanceEnabled: boolean;
+  bybitEnabled: boolean;
 }
 
 export default function BuyPage() {
@@ -58,6 +60,8 @@ export default function BuyPage() {
           buyEnabled: data.buyEnabled ?? true,
           vodafoneEnabled: data.vodafoneEnabled ?? true,
           instapayEnabled: data.instapayEnabled ?? true,
+          binanceEnabled: data.binanceEnabled ?? true,
+          bybitEnabled: data.bybitEnabled ?? true,
         };
         setSiteSettings(settings);
 
@@ -66,6 +70,13 @@ export default function BuyPage() {
           setPaymentMethod("VODAFONE_CASH");
         } else if (settings.instapayEnabled) {
           setPaymentMethod("INSTAPAY");
+        }
+
+        // ضبط خيار الاستلام الافتراضي بناءً على المتاح
+        if (settings.binanceEnabled) {
+          setReceiveMethod("BINANCE_PAY");
+        } else if (settings.bybitEnabled) {
+          setReceiveMethod("BYBIT_PAY");
         }
       })
       .catch(console.error)
@@ -91,6 +102,19 @@ export default function BuyPage() {
     setPaymentMethod(method);
   };
 
+  const handleSelectReceiveMethod = (method: BuyReceiveMethod) => {
+    if (method === "BINANCE_PAY" && siteSettings && !siteSettings.binanceEnabled) {
+      setMaintenanceNotice("استلام Binance Pay متوقف حالياً للصيانة وسوف يتاح قريباً.");
+      return;
+    }
+    if (method === "BYBIT_PAY" && siteSettings && !siteSettings.bybitEnabled) {
+      setMaintenanceNotice("استلام Bybit Pay متوقف حالياً للصيانة وسوف يتاح قريباً.");
+      return;
+    }
+    setMaintenanceNotice(null);
+    setReceiveMethod(method);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -106,6 +130,16 @@ export default function BuyPage() {
 
     if (paymentMethod === "INSTAPAY" && siteSettings && !siteSettings.instapayEnabled) {
       alert("إنستا باي متوقف حالياً: جاري الصيانة وسوف يتاح قريباً.");
+      return;
+    }
+
+    if (receiveMethod === "BINANCE_PAY" && siteSettings && !siteSettings.binanceEnabled) {
+      alert("خدمة Binance UID متوقفة حالياً: جاري الصيانة وسوف تتاح قريباً.");
+      return;
+    }
+
+    if (receiveMethod === "BYBIT_PAY" && siteSettings && !siteSettings.bybitEnabled) {
+      alert("خدمة Bybit Pay متوقفة حالياً: جاري الصيانة وسوف تتاح قريباً.");
       return;
     }
 
@@ -160,32 +194,28 @@ export default function BuyPage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="max-w-2xl mx-auto"
+              className="max-w-xl mx-auto"
             >
-              <Card className="liquid-glass-gold border-yellow-500/40 text-center py-12 px-6">
+              <Card className="border-yellow-500/40 bg-[#121218]/90 text-center py-10 px-6 shadow-[0_0_40px_rgba(245,185,66,0.15)]">
                 <CardContent className="space-y-4">
-                  <div className="w-20 h-20 mx-auto rounded-3xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400">
-                    <Wrench className="w-10 h-10 animate-pulse" />
+                  <div className="w-16 h-16 mx-auto rounded-full bg-yellow-500/10 flex items-center justify-center border border-yellow-500/30">
+                    <Wrench className="w-8 h-8 text-[#F5B942]" />
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                    جاري الصيانة وسوف يتاح قريباً
-                  </h2>
-                  <p className="text-gray-300 max-w-md mx-auto text-sm sm:text-base leading-relaxed">
-                    نعتذر لعملائنا الكرام، خدمة شراء USDT متوقفة حالياً لأعمال الصيانة والتحديثات الدورية وسوف تكون متاحة في أقرب وقت.
+                  <h2 className="text-2xl font-bold text-white">خدمة الشراء متوقفة مؤقتاً</h2>
+                  <p className="text-gray-300 text-sm leading-relaxed">
+                    عمليات الشراء متوقفة حالياً للصيانة الدورية وتحديث الأنظمة.
+                    <br />
+                    وسوف تتاح الخدمة قريباً جداً، شكراً لتفهمكم.
                   </p>
-                  <div className="pt-4 flex justify-center gap-4">
-                    <button
-                      onClick={() => router.push("/")}
-                      className="px-6 py-2.5 rounded-xl liquid-pill text-sm font-semibold text-gray-200 hover:text-white"
+                  <div className="pt-2">
+                    <a
+                      href="https://t.me/HELAL_SHADY"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block px-5 py-2.5 rounded-xl liquid-pill text-xs font-semibold text-[#F5B942] hover:scale-105 transition-all"
                     >
-                      العودة للرئيسية
-                    </button>
-                    <button
-                      onClick={() => router.push("/sell")}
-                      className="px-6 py-2.5 bg-gradient-to-r from-[#F5B942] to-[#E6A430] text-[#0A0A0A] rounded-xl text-sm font-bold shadow-lg"
-                    >
-                      الانتقال لصفحة البيع
-                    </button>
+                      تواصل مع الدعم عبر Telegram
+                    </a>
                   </div>
                 </CardContent>
               </Card>
@@ -260,28 +290,46 @@ export default function BuyPage() {
                       {/* Receive Method Switcher */}
                       <FormGroup>
                         <Label>{t("receiveMethod")}</Label>
+
+                        {/* لو الاتنين مقفولين */}
+                        {siteSettings && !siteSettings.binanceEnabled && !siteSettings.bybitEnabled && (
+                          <div className="p-3 mb-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs sm:text-sm">
+                            ⚠️ جميع منصات استلام USDT متوقفة حالياً للصيانة وسوف تتاح قريباً.
+                          </div>
+                        )}
+
                         <div className="flex gap-3">
                           <button
                             type="button"
-                            onClick={() => setReceiveMethod("BINANCE_PAY")}
-                            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                              receiveMethod === "BINANCE_PAY"
+                            onClick={() => handleSelectReceiveMethod("BINANCE_PAY")}
+                            className={`flex-1 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold transition-all relative ${
+                              receiveMethod === "BINANCE_PAY" && (!siteSettings || siteSettings.binanceEnabled)
                                 ? "liquid-pill-active"
                                 : "liquid-pill text-gray-300"
-                            }`}
+                            } ${siteSettings && !siteSettings.binanceEnabled ? "opacity-60 border-yellow-500/40" : ""}`}
                           >
-                            Binance Pay
+                            <span>Binance Pay</span>
+                            {siteSettings && !siteSettings.binanceEnabled && (
+                              <span className="block text-[10px] text-yellow-400 font-normal">
+                                جاري الصيانة
+                              </span>
+                            )}
                           </button>
                           <button
                             type="button"
-                            onClick={() => setReceiveMethod("BYBIT_PAY")}
-                            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                              receiveMethod === "BYBIT_PAY"
+                            onClick={() => handleSelectReceiveMethod("BYBIT_PAY")}
+                            className={`flex-1 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold transition-all relative ${
+                              receiveMethod === "BYBIT_PAY" && (!siteSettings || siteSettings.bybitEnabled)
                                 ? "liquid-pill-active"
                                 : "liquid-pill text-gray-300"
-                            }`}
+                            } ${siteSettings && !siteSettings.bybitEnabled ? "opacity-60 border-yellow-500/40" : ""}`}
                           >
-                            Bybit Pay
+                            <span>Bybit Pay</span>
+                            {siteSettings && !siteSettings.bybitEnabled && (
+                              <span className="block text-[10px] text-yellow-400 font-normal">
+                                جاري الصيانة
+                              </span>
+                            )}
                           </button>
                         </div>
                       </FormGroup>
@@ -314,7 +362,7 @@ export default function BuyPage() {
                         </Label>
                         <Input
                           id="walletNumber"
-                          placeholder="01012345678"
+                          placeholder={paymentMethod === "VODAFONE_CASH" ? "01012345678" : "01012345678 أو username@instapay"}
                           value={orderData.walletNumber}
                           onChange={(e) =>
                             setOrderData({
@@ -350,7 +398,11 @@ export default function BuyPage() {
                         className="w-full py-3.5"
                         disabled={
                           loading ||
-                          (siteSettings ? !siteSettings.buyEnabled || (!siteSettings.vodafoneEnabled && !siteSettings.instapayEnabled) : false)
+                          (siteSettings
+                            ? !siteSettings.buyEnabled ||
+                              (!siteSettings.vodafoneEnabled && !siteSettings.instapayEnabled) ||
+                              (!siteSettings.binanceEnabled && !siteSettings.bybitEnabled)
+                            : false)
                         }
                       >
                         {loading ? t("processing") : t("createOrderBtn")}

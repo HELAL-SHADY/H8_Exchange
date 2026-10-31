@@ -91,6 +91,24 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
+      if (
+        (paymentMethod === "BINANCE_PAY" || receiveMethod === "BINANCE_PAY") &&
+        !siteSettings.binanceEnabled
+      ) {
+        return NextResponse.json(
+          { error: "خدمة بينانس (Binance Pay) متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
+          { status: 503 }
+        );
+      }
+      if (
+        (paymentMethod === "BYBIT_PAY" || receiveMethod === "BYBIT_PAY") &&
+        !siteSettings.bybitEnabled
+      ) {
+        return NextResponse.json(
+          { error: "خدمة بايبت (Bybit Pay) متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
+          { status: 503 }
+        );
+      }
     }
 
     // جلب بيانات المستخدم (الاسم ورقم الهاتف) من حسابه المسجل

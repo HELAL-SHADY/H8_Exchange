@@ -93,6 +93,8 @@ export const translations = {
     receivingInfo: "معلومات الاستقبال",
     copied: "✅ تم النسخ!",
     copyNumber: "انسخ الرقم",
+    payNow: "دفع",
+    openInstapayLink: "فتح رابط الدفع",
     loading: "جاري التحميل...",
     instructions: "التعليمات",
     buyInstructions: [
@@ -272,6 +274,8 @@ export const translations = {
     receivingInfo: "Receiving Info",
     copied: "✅ Copied!",
     copyNumber: "Copy Number",
+    payNow: "Pay",
+    openInstapayLink: "Open Payment Link",
     loading: "Loading...",
     instructions: "Instructions",
     buyInstructions: [

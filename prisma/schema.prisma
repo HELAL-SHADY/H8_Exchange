@@ -231,6 +231,8 @@ model SiteSettings {
   // Enable / Disable Payment Methods
   instapayEnabled Boolean @default(true)
   vodafoneEnabled Boolean @default(true)
+  binanceEnabled  Boolean @default(true)
+  bybitEnabled    Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
