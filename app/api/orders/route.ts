@@ -3,31 +3,70 @@ import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { sendNewOrderNotification } from "@/lib/telegram";
+import { generateOrderNumber, roundToPrecision } from "@/lib/order-utils";
 
 export async function GET(request: NextRequest) {
   try {
-    const session: any = await getServerSession(authOptions);
+    const session = (await getServerSession(authOptions as any)) as any;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const orders = await prisma.order.findMany({
-      where: {
-        userId: (session.user as any).id,
-      },
-      include: {
-        reviews: true,
-      },
-      orderBy: {
-        createdAt: "desc",
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status");
+    const type = searchParams.get("type");
+    const search = searchParams.get("search");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20")));
+
+    const where: any = {
+      userId: session.user.id,
+    };
+
+    if (status && status !== "ALL") {
+      where.status = status;
+    }
+
+    if (type && type !== "ALL") {
+      where.type = type;
+    }
+
+    if (search) {
+      where.OR = [
+        { id: { contains: search, mode: "insensitive" } },
+        { orderNumber: { contains: search, mode: "insensitive" } },
+        { txHash: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          reviews: true,
+          statusHistory: {
+            orderBy: { createdAt: "asc" },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     });
-
-    return NextResponse.json(orders);
   } catch (error: any) {
     console.error("Error fetching orders:", error);
     return NextResponse.json(
@@ -39,26 +78,34 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session: any = await getServerSession(authOptions);
+    const session = (await getServerSession(authOptions as any)) as any;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { type, amount, binanceUid, walletNumber, proofImageUrl, paymentMethod, receiveMethod } =
-      await request.json();
+    const body = await request.json();
+    const {
+      type,
+      amount,
+      binanceUid,
+      walletNumber,
+      proofImageUrl,
+      proofImageId,
+      paymentMethod,
+      receiveMethod,
+      network,
+      txHash,
+    } = body;
 
-    if (!type || !amount || !binanceUid || !walletNumber) {
+    if (!type || !amount) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "الرجاء تحديد نوع المعاملة والمبلغ المطلوب" },
         { status: 400 }
       );
     }
 
-    // التحقق من إعدادات الموقع وتوفر العمليات وطرق الدفع
+    // Check system maintenance & trading status
     const siteSettings = await prisma.siteSettings.findFirst();
     if (siteSettings) {
       if (type === "BUY" && !siteSettings.buyEnabled) {
@@ -73,131 +120,139 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
-      if (
-        (paymentMethod === "INSTAPAY" || receiveMethod === "INSTAPAY") &&
-        !siteSettings.instapayEnabled
-      ) {
-        return NextResponse.json(
-          { error: "خدمة إنستا باي (InstaPay) متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
-          { status: 503 }
-        );
-      }
-      if (
-        (paymentMethod === "VODAFONE_CASH" || receiveMethod === "VODAFONE_CASH") &&
-        !siteSettings.vodafoneEnabled
-      ) {
-        return NextResponse.json(
-          { error: "خدمة فودافون كاش (Vodafone Cash) متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
-          { status: 503 }
-        );
-      }
-      if (
-        (paymentMethod === "BINANCE_PAY" || receiveMethod === "BINANCE_PAY") &&
-        !siteSettings.binanceEnabled
-      ) {
-        return NextResponse.json(
-          { error: "خدمة بينانس (Binance Pay) متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
-          { status: 503 }
-        );
-      }
-      if (
-        (paymentMethod === "BYBIT_PAY" || receiveMethod === "BYBIT_PAY") &&
-        !siteSettings.bybitEnabled
-      ) {
-        return NextResponse.json(
-          { error: "خدمة بايبت (Bybit Pay) متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
-          { status: 503 }
-        );
-      }
     }
 
-    // جلب بيانات المستخدم (الاسم ورقم الهاتف) من حسابه المسجل
+    // Get verified current exchange rate
+    const exchangeRate = await prisma.exchangeRate.findFirst();
+    if (!exchangeRate || !exchangeRate.tradingEnabled) {
+      return NextResponse.json(
+        { error: "خدمة التداول متوقفة مؤقتاً لتحديث أسعار الصرف، يرجى المحاولة بعد قليل" },
+        { status: 503 }
+      );
+    }
+
+    // Server-side financial calculations & permanent snapshots
+    const rateSnapshot = type === "BUY" ? exchangeRate.buyRate : exchangeRate.sellRate;
+    const numericAmount = parseFloat(amount);
+
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return NextResponse.json({ error: "المبلغ المدخل غير صالح" }, { status: 400 });
+    }
+
+    let usdtAmount = 0;
+    let egpAmount = 0;
+
+    if (type === "BUY") {
+      // In BUY order: amount entered is EGP or USDT
+      // If payment is fiat, calculate USDT
+      egpAmount = roundToPrecision(numericAmount);
+      usdtAmount = roundToPrecision(egpAmount / rateSnapshot);
+    } else {
+      // SELL order: amount entered is USDT
+      usdtAmount = roundToPrecision(numericAmount);
+      egpAmount = roundToPrecision(usdtAmount * rateSnapshot);
+    }
+
+    // Validate limits strictly against USDT amount
+    if (
+      usdtAmount < exchangeRate.minOrderAmount ||
+      usdtAmount > exchangeRate.maxOrderAmount
+    ) {
+      return NextResponse.json(
+        {
+          error: `المبلغ يجب أن يكون بين ${exchangeRate.minOrderAmount} USDT و ${exchangeRate.maxOrderAmount} USDT`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Retrieve user credentials
     const user = await prisma.user.findUnique({
-      where: { id: (session.user as any).id },
+      where: { id: session.user.id },
       select: { name: true, phone: true },
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 404 });
     }
 
-    const fullName = user.name;
-    const phone = user.phone || "";
+    const orderNumber = generateOrderNumber(type);
 
-    // Get current exchange rate
-    const exchangeRate = await prisma.exchangeRate.findFirst();
-    if (!exchangeRate) {
-      return NextResponse.json(
-        { error: "Exchange rate not configured" },
-        { status: 500 }
-      );
+    // Initial status: If proof or txHash is already uploaded, PENDING_REVIEW; otherwise PENDING_PAYMENT
+    const initialStatus = (proofImageUrl || txHash) ? "PENDING_REVIEW" : "PENDING_PAYMENT";
+
+    // Create Order with Snapshot and Status History in transaction
+    const newOrder = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
+        data: {
+          orderNumber,
+          userId: session.user.id,
+          type,
+          amount: type === "BUY" ? egpAmount : usdtAmount,
+          rateSnapshot,
+          usdtAmount,
+          egpAmount,
+          totalAmount: type === "BUY" ? egpAmount : egpAmount,
+          fullName: user.name,
+          phone: user.phone || "",
+          binanceUid: binanceUid || "",
+          walletNumber: walletNumber || "",
+          proofImageUrl: proofImageUrl || null,
+          proofImageId: proofImageId || null,
+          paymentMethod: paymentMethod || null,
+          receiveMethod: receiveMethod || null,
+          network: network || null,
+          txHash: txHash || null,
+          status: initialStatus,
+        },
+      });
+
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          fromStatus: null,
+          toStatus: initialStatus,
+          note: "Order created by user",
+          changedBy: session.user.id,
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: session.user.id,
+          orderId: order.id,
+          type: "ORDER_SUBMITTED",
+          title: "تم إنشاء طلبك بنجاح",
+          message: `طلب رقم ${orderNumber} بمبلغ ${usdtAmount} USDT (${egpAmount} ج.م) بانتظار إتمام الدفع والمراجعة.`,
+          actionUrl: `/dashboard/orders/${order.id}`,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: session.user.id,
+          orderId: order.id,
+          actionType: type === "BUY" ? "CREATE_BUY_ORDER" : "CREATE_SELL_ORDER",
+          actionDescription: `Created ${type} order ${orderNumber} for ${usdtAmount} USDT @ ${rateSnapshot} EGP`,
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+
+      return order;
+    });
+
+    // Notify Telegram channel asynchronously
+    try {
+      await sendNewOrderNotification(newOrder);
+    } catch (e) {
+      console.warn("Telegram alert failed silently:", e);
     }
 
-    // Validate amount (both BUY and SELL evaluated in USD/USDT)
-    const amountInUsdt = type === "BUY" ? (amount / exchangeRate.buyRate) : amount;
-
-    if (amountInUsdt < exchangeRate.minOrderAmount || amountInUsdt > exchangeRate.maxOrderAmount) {
-      if (type === "BUY") {
-        const minEgp = Math.round(exchangeRate.minOrderAmount * exchangeRate.buyRate);
-        const maxEgp = Math.round(exchangeRate.maxOrderAmount * exchangeRate.buyRate);
-        return NextResponse.json(
-          { error: `المبلغ يجب أن يكون بين ${minEgp} EGP و ${maxEgp} EGP (ما يعادل ${exchangeRate.minOrderAmount}$ إلى ${exchangeRate.maxOrderAmount}$)` },
-          { status: 400 }
-        );
-      } else {
-        return NextResponse.json(
-          { error: `المبلغ يجب أن يكون بين ${exchangeRate.minOrderAmount}$ و ${exchangeRate.maxOrderAmount}$` },
-          { status: 400 }
-        );
-      }
-    }
-
-    const order = await prisma.order.create({
-      data: {
-        userId: (session.user as any).id,
-        type,
-        amount,
-        fullName,
-        phone,
-        binanceUid,
-        walletNumber,
-        proofImageUrl: proofImageUrl || null,
-        paymentMethod,
-        receiveMethod,
-        status: "PENDING_PAYMENT",
-      },
-    });
-
-    // Create notification
-    await prisma.notification.create({
-      data: {
-        userId: (session.user as any).id,
-        orderId: order.id,
-        type: "ORDER_SUBMITTED",
-        title: "تم إنشاء طلبك",
-        message: `تم إنشاء طلب ${type === "BUY" ? "شراء" : "بيع"} بقيمة ${amount} وهو في انتظار الدفع`,
-      },
-    });
-
-    // Log the action
-    await prisma.auditLog.create({
-      data: {
-        userId: (session.user as any).id,
-        orderId: order.id,
-        actionType: type === "BUY" ? "CREATE_BUY_ORDER" : "CREATE_SELL_ORDER",
-        actionDescription: `User created ${type} order for ${amount}`,
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
-    });
-
-    return NextResponse.json(order, { status: 201 });
+    return NextResponse.json(newOrder, { status: 201 });
   } catch (error: any) {
     console.error("Error creating order:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create order" },
+      { error: error.message || "فشل إنشاء الطلب. يرجى المحاولة مرة أخرى." },
       { status: 500 }
     );
   }

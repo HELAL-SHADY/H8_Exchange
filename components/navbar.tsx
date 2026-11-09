@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
-import { Menu, X, Globe } from "lucide-react";
+import { Menu, X, Globe, LayoutDashboard, UserCheck } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { NotificationBell } from "@/components/notification-bell";
 
@@ -16,8 +16,11 @@ export function Navbar() {
     setLocale(locale === "ar" ? "en" : "ar");
   };
 
+  const userRole = (session?.user as any)?.role;
+  const isStaff = ["ADMIN", "SUPER_ADMIN", "SUPPORT_AGENT"].includes(userRole);
+
   return (
-    <nav className="bg-[#08080C]/70 backdrop-blur-2xl border-b border-white/[0.08] sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)]">
+    <nav className="bg-[#08080C]/80 backdrop-blur-2xl border-b border-white/[0.08] sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)]">
       <div className="liquid-sheen" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 relative">
@@ -32,11 +35,10 @@ export function Navbar() {
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
-              textShadow: "none",
               filter: "drop-shadow(0 0 8px rgba(245,185,66,0.6))",
             }}
-            onMouseEnter={e => (e.currentTarget.style.filter = "drop-shadow(0 0 16px rgba(245,185,66,0.95))")}
-            onMouseLeave={e => (e.currentTarget.style.filter = "drop-shadow(0 0 8px rgba(245,185,66,0.6))")}
+            onMouseEnter={(e) => (e.currentTarget.style.filter = "drop-shadow(0 0 16px rgba(245,185,66,0.95))")}
+            onMouseLeave={(e) => (e.currentTarget.style.filter = "drop-shadow(0 0 8px rgba(245,185,66,0.6))")}
           >
             HELAL
           </a>
@@ -81,23 +83,26 @@ export function Navbar() {
                 <NotificationBell />
 
                 <Link
-                  href="/my-orders"
-                  className="px-3 py-1.5 rounded-xl liquid-pill text-gray-300 hover:text-white text-sm"
+                  href="/dashboard"
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs font-bold border border-amber-500/30 flex items-center gap-1.5 transition-all"
                 >
-                  {t("myOrders")}
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span>لوحة المستخدم</span>
                 </Link>
-                {((session.user as any).role === "ADMIN" ||
-                (session.user as any).role === "SUPER_ADMIN") ? (
+
+                {isStaff && (
                   <Link
                     href="/admin"
-                    className="px-4 py-2 bg-gradient-to-r from-[#F5B942] to-[#E6A430] text-[#0A0A0A] rounded-xl font-bold shadow-[0_0_20px_rgba(245,185,66,0.35)] hover:shadow-[0_0_30px_rgba(245,185,66,0.6)] transition-all text-sm"
+                    className="px-4 py-2 bg-gradient-to-r from-[#F5B942] to-[#E6A430] text-[#0A0A0A] rounded-xl font-bold shadow-[0_0_20px_rgba(245,185,66,0.35)] hover:shadow-[0_0_30px_rgba(245,185,66,0.6)] transition-all text-xs flex items-center gap-1.5"
                   >
-                    {t("dashboard")}
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>لوحة الإدارة</span>
                   </Link>
-                ) : null}
+                )}
+
                 <button
-                  onClick={() => signOut()}
-                  className="px-3.5 py-1.5 bg-red-600/80 hover:bg-red-600 text-white rounded-xl transition-colors text-sm font-medium border border-red-500/30"
+                  onClick={() => signOut({ callbackUrl: "/auth/login" })}
+                  className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl transition-colors text-xs font-medium border border-red-500/30"
                 >
                   {t("logout")}
                 </button>
@@ -122,11 +127,10 @@ export function Navbar() {
             </button>
           </div>
 
-          {/* Mobile Right Controls (Menu & Language & Notifications) */}
+          {/* Mobile Right Controls */}
           <div className="md:hidden flex items-center gap-2">
             {session?.user && <NotificationBell />}
 
-            {/* Language Switcher for Mobile */}
             <button
               onClick={toggleLanguage}
               className="p-2 liquid-pill text-gray-300 hover:text-white rounded-xl flex items-center gap-1 text-xs"
@@ -178,28 +182,27 @@ export function Navbar() {
             {session?.user ? (
               <div className="pt-2 border-t border-white/10 space-y-2">
                 <Link
-                  href="/my-orders"
+                  href="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-4 py-2.5 text-gray-300 hover:text-[#F5B942] hover:bg-white/[0.06] rounded-xl transition-all"
+                  className="block px-4 py-2.5 text-amber-400 font-bold hover:bg-amber-500/10 rounded-xl transition-all"
                 >
-                  {t("myOrders")}
+                  لوحة تحكم المستخدم
                 </Link>
-                {((session.user as any).role === "ADMIN" ||
-                (session.user as any).role === "SUPER_ADMIN") && (
+                {isStaff && (
                   <Link
                     href="/admin"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2.5 bg-gradient-to-r from-[#F5B942] to-[#E6A430] text-[#0A0A0A] rounded-xl font-bold text-center shadow-lg transition-all"
+                    className="block px-4 py-2.5 bg-gradient-to-r from-[#F5B942] to-[#E6A430] text-[#0A0A0A] rounded-xl font-bold text-center shadow-lg transition-all text-xs"
                   >
-                    {t("dashboard")}
+                    لوحة الإدارة (Admin Panel)
                   </Link>
                 )}
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    signOut();
+                    signOut({ callbackUrl: "/auth/login" });
                   }}
-                  className="w-full px-4 py-2.5 bg-red-600/80 hover:bg-red-600 text-white rounded-xl transition-colors font-medium border border-red-500/30"
+                  className="w-full px-4 py-2.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl transition-colors font-medium border border-red-500/30 text-xs"
                 >
                   {t("logout")}
                 </button>

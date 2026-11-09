@@ -22,12 +22,21 @@ model User {
   binanceUid   String?
   walletNumber String?
   profileImage String?
+  telegramUsername String?
+
+  // Security & 2FA
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean @default(false)
 
   // Relationships
-  orders        Order[]
-  reviews       Review[]
-  notifications Notification[]
-  auditLogs     AuditLog[]
+  orders          Order[]
+  reviews         Review[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  userWallets     UserWallet[]
+  supportTickets  SupportTicket[]
+  ticketMessages  SupportMessage[]
+  handledTickets  SupportTicket[]  @relation("AssignedAgent")
 
   // Metadata
   isVerified Boolean  @default(false)
@@ -38,27 +47,53 @@ model User {
   @@map("users")
 }
 
+model UserWallet {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String   // e.g. "My Binance Pay", "InstaPay Principal", "USDT TRC20"
+  type      String   // VODAFONE_CASH, INSTAPAY, BINANCE_PAY, BYBIT_PAY, CRYPTO_WALLET
+  network   String?  // TRC20, BEP20, ERC20, etc.
+  address   String   // Phone number, UID, or on-chain address
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_wallets")
+}
+
 model Order {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  orderNumber String?  @unique // Human readable unique reference: e.g. H8-BUY-98421
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Order details
   type   OrderType   @default(BUY)
-  amount Float
+  amount Float       // Primary requested amount
   status OrderStatus @default(PENDING_REVIEW)
 
-  // Payment method used for this order (ÙƒÙŠÙ Ø¯ÙØ¹/Ø£Ø±Ø³Ù„ Ø§Ù„Ø¹Ù…ÙŠÙ„)
-  // BUY orders:  VODAFONE_CASH | INSTAPAY
-  // SELL orders: BINANCE_PAY   | BYBIT_PAY
+  // Financial snapshot
+  rateSnapshot  Float?   // Captured exchange rate at order creation
+  usdtAmount    Float?   // Exact USDT calculated
+  egpAmount     Float?   // Exact EGP calculated
+  fee           Float?   @default(0.0) // Service fee if applicable
+  totalAmount   Float?   // Total payable/receivable
+
+  // Payment method used for this order
   paymentMethod String?
 
-  // Receive method (Ø¥Ø²Ø§ÙŠ Ø§Ù„Ø¹Ù…ÙŠÙ„ Ø¹Ø§ÙŠØ² ÙŠØ³ØªÙ„Ù…)
-  // BUY orders:  BINANCE_PAY   | BYBIT_PAY   (ÙŠØ³ØªÙ„Ù… USDT)
-  // SELL orders: VODAFONE_CASH | INSTAPAY    (ÙŠØ³ØªÙ„Ù… EGP)
+  // Receive method
   receiveMethod String?
 
-  // User information
+  // Crypto network for direct deposits / withdrawals (e.g. TRC20, BEP20, ERC20)
+  network       String?
+
+  // Blockchain Transaction Hash (For SELL orders or completed payouts)
+  txHash        String?
+
+  // User information snapshot
   fullName     String
   phone        String
   binanceUid   String
@@ -68,17 +103,20 @@ model Order {
   proofImageUrl String?
   proofImageId  String?
 
-  // Admin notes
-  adminNote   String?
-  approvedBy  String?
-  approvedAt  DateTime?
-  rejectedAt  DateTime?
-  completedAt DateTime?
+  // Admin notes and execution
+  adminNote       String?
+  rejectionReason String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  completedAt     DateTime?
 
   // Relationships
-  reviews       Review[]
-  notifications Notification[]
-  auditLogs     AuditLog[]
+  reviews         Review[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  statusHistory   OrderStatusHistory[]
+  supportTickets  SupportTicket[]
 
   // Metadata
   createdAt DateTime @default(now())
@@ -87,7 +125,61 @@ model Order {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([orderNumber])
   @@map("orders")
+}
+
+model OrderStatusHistory {
+  id         String      @id @default(cuid())
+  orderId    String
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  note       String?
+  changedBy  String?     // User ID or 'SYSTEM'
+  createdAt  DateTime    @default(now())
+
+  @@index([orderId])
+  @@map("order_status_history")
+}
+
+model SupportTicket {
+  id          String         @id @default(cuid())
+  ticketNumber String        @unique
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId     String?
+  order       Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  subject     String
+  category    TicketCategory @default(GENERAL)
+  status      TicketStatus   @default(OPEN)
+  priority    TicketPriority @default(MEDIUM)
+  assignedToId String?
+  assignedTo  User?          @relation("AssignedAgent", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  messages    SupportMessage[]
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([ticketNumber])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  message   String
+  isAdmin   Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  @@index([ticketId])
+  @@map("support_messages")
 }
 
 model Review {
@@ -171,6 +263,11 @@ model ExchangeRate {
   minOrderAmount Float @default(100.0)
   maxOrderAmount Float @default(10000.0)
 
+  // Trading status
+  tradingEnabled Boolean @default(true)
+  buyFeePercent  Float   @default(0.0)
+  sellFeePercent Float   @default(0.0)
+
   // Settings
   isAutomatic  Boolean @default(false)
   profitMargin Float?  @default(2.0)
@@ -206,6 +303,24 @@ model RateHistory {
   @@map("rate_history")
 }
 
+model PaymentMethodConfig {
+  id          String   @id @default(cuid())
+  code        String   @unique // e.g. VODAFONE_CASH, INSTAPAY, BINANCE_PAY, BYBIT_PAY, USDT_TRC20
+  nameEn      String
+  nameAr      String
+  description String?
+  accountDetails String? // Wallet address, IBAN, InstaPay Address or Mobile Number
+  isActive    Boolean  @default(true)
+  type        String   // FIAT, CRYPTO
+  minAmount   Float?
+  maxAmount   Float?
+  instructions String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("payment_method_configs")
+}
+
 model SiteSettings {
   id String @id @default(cuid())
 
@@ -217,8 +332,13 @@ model SiteSettings {
   instapayNumber String @default("")
   bybitPayId     String @default("")
 
+  // Crypto Deposit Addresses
+  usdtTrc20Address String? @default("")
+  usdtBep20Address String? @default("")
+
   // Contact
   telegramUsername String? @default("")
+  telegramSupportUrl String? @default("https://t.me/H8ExchangeSupport")
   supportEmail     String? @default("")
 
   // Website
@@ -233,6 +353,7 @@ model SiteSettings {
   vodafoneEnabled Boolean @default(true)
   binanceEnabled  Boolean @default(true)
   bybitEnabled    Boolean @default(true)
+  cryptoEnabled   Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -254,6 +375,7 @@ model PasswordResetToken {
 // Enums
 enum Role {
   USER
+  SUPPORT_AGENT
   ADMIN
   SUPER_ADMIN
 }
@@ -270,6 +392,31 @@ enum OrderStatus {
   APPROVED
   REJECTED
   COMPLETED
+  CANCELLED
+}
+
+enum TicketCategory {
+  GENERAL
+  BUY_ORDER
+  SELL_ORDER
+  PAYMENT_VERIFICATION
+  ACCOUNT
+  TECHNICAL
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_USER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
 enum NotificationType {
@@ -279,6 +426,8 @@ enum NotificationType {
   ORDER_COMPLETED
   REVIEW_SUBMITTED
   SYSTEM_UPDATE
+  TICKET_REPLY
+  SECURITY_ALERT
 }
 
 enum ActionType {
@@ -298,4 +447,7 @@ enum ActionType {
   EDIT_ORDER
   EXPORT_ORDERS
   PASSWORD_RESET
-}
+  CREATE_SUPPORT_TICKET
+  REPLY_SUPPORT_TICKET
+  RESOLVE_SUPPORT_TICKET
+}

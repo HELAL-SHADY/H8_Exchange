@@ -3,10 +3,12 @@ import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { sendOrderStatusNotification } from "@/lib/telegram";
-import { sendOrderCompletedEmail } from "@/lib/email";
 
 async function checkAdminRole(session: any) {
-  if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role)) {
+  if (
+    !session?.user ||
+    !["ADMIN", "SUPER_ADMIN", "SUPPORT_AGENT"].includes((session.user as any).role)
+  ) {
     return false;
   }
   return true;
@@ -18,146 +20,146 @@ export async function PATCH(
 ) {
   const { params } = context;
   try {
-    const session: any = await getServerSession(authOptions as any);
+    const session = (await getServerSession(authOptions as any)) as any;
 
-    if (!await checkAdminRole(session)) {
+    if (!(await checkAdminRole(session))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { action, adminNote, rejectionReason, txHash } = await request.json();
+
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: params.id },
+      include: { user: true },
+    });
+
+    if (!existingOrder) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Role boundary: Support Agent can view and add notes, but cannot approve/complete/reject financial state
+    const isFullAdmin = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
+    if (!isFullAdmin && ["APPROVE", "COMPLETE", "REJECT"].includes(action)) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "موظف الدعم الفني غير مصرح له بتغيير الحالة المالية للطلب" },
         { status: 403 }
       );
     }
 
-    const { action, adminNote } = await request.json();
+    let newStatus: any = existingOrder.status;
+    const now = new Date();
+    const updateData: any = {
+      adminNote: adminNote !== undefined ? adminNote : existingOrder.adminNote,
+    };
 
-    if (!["APPROVE", "REJECT", "COMPLETE"].includes(action)) {
-      return NextResponse.json(
-        { error: "Invalid action" },
-        { status: 400 }
-      );
+    if (txHash) {
+      updateData.txHash = txHash;
     }
 
-    let newStatus: any;
     switch (action) {
       case "APPROVE":
         newStatus = "APPROVED";
+        updateData.status = newStatus;
+        updateData.approvedBy = session.user.id;
+        updateData.approvedAt = now;
         break;
       case "REJECT":
         newStatus = "REJECTED";
+        updateData.status = newStatus;
+        updateData.rejectionReason = rejectionReason || adminNote || "لم يتم استيفاء شروط العملية";
+        updateData.rejectedAt = now;
         break;
       case "COMPLETE":
         newStatus = "COMPLETED";
+        updateData.status = newStatus;
+        updateData.completedAt = now;
         break;
+      case "VERIFY":
+        newStatus = "UNDER_VERIFICATION";
+        updateData.status = newStatus;
+        break;
+      case "NOTE_ONLY":
+        // Only update adminNote
+        break;
+      default:
+        return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    const existingOrder = await prisma.order.findUnique({
-      where: { id: params.id },
-    });
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const ord = await tx.order.update({
+        where: { id: params.id },
+        data: updateData,
+        include: { user: true },
+      });
 
-    if (!existingOrder) {
-      return NextResponse.json(
-        { error: "Order not found" },
-        { status: 404 }
-      );
-    }
-
-    const order = await prisma.order.update({
-      where: { id: params.id },
-      data: {
-        status: newStatus,
-        adminNote,
-        approvedBy: action === "APPROVE" ? (session.user as any).id : existingOrder.approvedBy,
-        approvedAt: action === "APPROVE" ? new Date() : existingOrder.approvedAt,
-        rejectedAt: action === "REJECT" ? new Date() : existingOrder.rejectedAt,
-        completedAt: action === "COMPLETE" ? new Date() : existingOrder.completedAt,
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    // Create notification for user in Arabic
-    const formattedTitle =
-      action === "COMPLETE"
-        ? "🎉 تم إكمال طلبك بنجاح"
-        : action === "APPROVE"
-        ? "✅ تم قبول طلبك"
-        : "❌ تم رفض طلبك";
-
-    const isBuy = order.type === "BUY";
-    const formattedMessage =
-      action === "COMPLETE"
-        ? (adminNote ||
-          (isBuy
-            ? `تم إرسال ${order.amount} USDT إلى حسابك بنجاح. شكراً لتعاملك مع H8 Exchange!`
-            : `تم تحويل ${order.amount} ج.م إلى محفظتك بنجاح. شكراً لتعاملك مع H8 Exchange!`))
-        : action === "APPROVE"
-        ? (adminNote || "تمت الموافقة على طلبك بنجاح وهو الآن في مرحلة التنفيذ والتحويل.")
-        : (adminNote || "تم رفض طلبك. يرجى مراجعة التفاصيل أو التواصل مع الدعم الفني.");
-
-    await prisma.notification.create({
-      data: {
-        userId: order.userId,
-        orderId: order.id,
-        type:
-          action === "APPROVE"
-            ? "ORDER_APPROVED"
-            : action === "REJECT"
-            ? "ORDER_REJECTED"
-            : "ORDER_COMPLETED",
-        title: formattedTitle,
-        message: formattedMessage,
-        actionUrl: `/track?id=${order.id}`,
-      },
-    });
-
-    // Send Email to user on order completion
-    if (action === "COMPLETE" && order.user?.email) {
-      try {
-        await sendOrderCompletedEmail({
-          toEmail: order.user.email,
-          userName: order.user.name || order.fullName,
-          orderId: order.id,
-          orderType: order.type,
-          amount: order.amount,
-          paymentMethod: order.paymentMethod,
-          receiveMethod: order.receiveMethod,
-          walletNumber: order.walletNumber,
-          binanceUid: order.binanceUid,
-          adminNote: adminNote || null,
+      if (action !== "NOTE_ONLY" && newStatus !== existingOrder.status) {
+        await tx.orderStatusHistory.create({
+          data: {
+            orderId: ord.id,
+            fromStatus: existingOrder.status,
+            toStatus: newStatus,
+            note: adminNote || rejectionReason || `Order status updated to ${newStatus}`,
+            changedBy: session.user.id,
+          },
         });
-      } catch (emailErr) {
-        console.error("Failed to send order completed email to user:", emailErr);
+
+        // User in-app notification
+        const titleMap: any = {
+          APPROVED: "✅ تمت الموافقة على طلبك",
+          COMPLETED: "🎉 تم تنفيذ طلبك بنجاح",
+          REJECTED: "❌ تم رفض طلبك",
+          UNDER_VERIFICATION: "🔍 طلبك قيد الفحص والتحقق المصرفي",
+        };
+
+        await tx.notification.create({
+          data: {
+            userId: ord.userId,
+            orderId: ord.id,
+            type:
+              newStatus === "COMPLETED"
+                ? "ORDER_COMPLETED"
+                : newStatus === "REJECTED"
+                ? "ORDER_REJECTED"
+                : "ORDER_APPROVED",
+            title: titleMap[newStatus] || "تحديث على حالة طلبك",
+            message:
+              rejectionReason ||
+              adminNote ||
+              `تغيرت حالة الطلب رقم ${ord.orderNumber || ord.id} إلى ${newStatus}`,
+            actionUrl: `/dashboard/orders/${ord.id}`,
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            userId: session.user.id,
+            orderId: ord.id,
+            actionType:
+              newStatus === "COMPLETED"
+                ? "MARK_COMPLETED"
+                : newStatus === "REJECTED"
+                ? "REJECT_ORDER"
+                : "APPROVE_ORDER",
+            actionDescription: `Admin ${session.user.name} changed status of ${ord.orderNumber || ord.id} to ${newStatus}`,
+            ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+          },
+        });
       }
-    }
 
-    // Send Telegram Notification to Admin
-    try {
-      await sendOrderStatusNotification(order, existingOrder.status);
-    } catch (telegramError) {
-      console.error("Failed to send Telegram order status update notification:", telegramError);
-    }
-
-    // Log the action
-    await prisma.auditLog.create({
-      data: {
-        userId: (session.user as any).id,
-        orderId: order.id,
-        actionType:
-          action === "APPROVE"
-            ? "APPROVE_ORDER"
-            : action === "REJECT"
-            ? "REJECT_ORDER"
-            : "MARK_COMPLETED",
-        actionDescription: `Admin ${action.toLowerCase()} order ${params.id}. Note: ${adminNote || "None"}`,
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
+      return ord;
     });
 
-    return NextResponse.json(order);
+    // Notify Telegram channel
+    try {
+      await sendOrderStatusNotification(updatedOrder, newStatus);
+    } catch (e) {
+      console.warn("Telegram status alert failed:", e);
+    }
+
+    return NextResponse.json(updatedOrder);
   } catch (error: any) {
-    console.error("Error updating order:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to update order" },
+      { error: error.message || "Failed to update order status" },
       { status: 500 }
     );
   }

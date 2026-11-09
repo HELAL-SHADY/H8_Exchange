@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
-async function checkAdminRole(session: any) {
+async function checkAdminFinancialRole(session: any) {
+  // Support agents cannot modify exchange rates; only ADMIN and SUPER_ADMIN
   if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role)) {
     return false;
   }
@@ -12,22 +13,34 @@ async function checkAdminRole(session: any) {
 
 export async function GET(request: NextRequest) {
   try {
-    const exchangeRate = await prisma.exchangeRate.findFirst();
+    let exchangeRate = await prisma.exchangeRate.findFirst();
 
     if (!exchangeRate) {
-      // Create default rates if not exists
-      const newRate = await prisma.exchangeRate.create({
+      exchangeRate = await prisma.exchangeRate.create({
         data: {
           buyRate: 51.0,
           sellRate: 50.0,
-          minOrderAmount: 100,
+          minOrderAmount: 10,
           maxOrderAmount: 10000,
+          tradingEnabled: true,
+          buyFeePercent: 0.0,
+          sellFeePercent: 0.0,
         },
       });
-      return NextResponse.json(newRate);
     }
 
-    return NextResponse.json(exchangeRate);
+    const { searchParams } = new URL(request.url);
+    const withHistory = searchParams.get("history") === "true";
+
+    let history: any[] = [];
+    if (withHistory) {
+      history = await prisma.rateHistory.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      });
+    }
+
+    return NextResponse.json({ ...exchangeRate, history });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Failed to fetch exchange rates" },
@@ -38,17 +51,27 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session: any = await getServerSession(authOptions as any);
+    const session = (await getServerSession(authOptions as any)) as any;
 
-    if (!await checkAdminRole(session)) {
+    if (!(await checkAdminFinancialRole(session))) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "غير مصرح لك بتعديل أسعار الصرف (يتطلب صلاحية Admin أو Super Admin)" },
         { status: 403 }
       );
     }
 
-    const { buyRate, sellRate, minOrderAmount, maxOrderAmount, isAutomatic, profitMargin } =
-      await request.json();
+    const body = await request.json();
+    const {
+      buyRate,
+      sellRate,
+      minOrderAmount,
+      maxOrderAmount,
+      tradingEnabled,
+      buyFeePercent,
+      sellFeePercent,
+      isAutomatic,
+      profitMargin,
+    } = body;
 
     const existingRate = await prisma.exchangeRate.findFirst();
 
@@ -59,45 +82,50 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Save history
-    await prisma.rateHistory.create({
-      data: {
-        oldBuyRate: existingRate.buyRate,
-        oldSellRate: existingRate.sellRate,
-        newBuyRate: buyRate || existingRate.buyRate,
-        newSellRate: sellRate || existingRate.sellRate,
-        updatedBy: (session.user as any).id,
-      },
+    // Save permanent history snapshot in transaction
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.rateHistory.create({
+        data: {
+          oldBuyRate: existingRate.buyRate,
+          oldSellRate: existingRate.sellRate,
+          newBuyRate: buyRate ?? existingRate.buyRate,
+          newSellRate: sellRate ?? existingRate.sellRate,
+          updatedBy: session.user.id,
+        },
+      });
+
+      const rate = await tx.exchangeRate.update({
+        where: { id: existingRate.id },
+        data: {
+          buyRate: buyRate !== undefined ? parseFloat(buyRate) : existingRate.buyRate,
+          sellRate: sellRate !== undefined ? parseFloat(sellRate) : existingRate.sellRate,
+          minOrderAmount: minOrderAmount !== undefined ? parseFloat(minOrderAmount) : existingRate.minOrderAmount,
+          maxOrderAmount: maxOrderAmount !== undefined ? parseFloat(maxOrderAmount) : existingRate.maxOrderAmount,
+          tradingEnabled: tradingEnabled !== undefined ? Boolean(tradingEnabled) : existingRate.tradingEnabled,
+          buyFeePercent: buyFeePercent !== undefined ? parseFloat(buyFeePercent) : existingRate.buyFeePercent,
+          sellFeePercent: sellFeePercent !== undefined ? parseFloat(sellFeePercent) : existingRate.sellFeePercent,
+          isAutomatic: isAutomatic !== undefined ? isAutomatic : existingRate.isAutomatic,
+          profitMargin: profitMargin !== undefined ? profitMargin : existingRate.profitMargin,
+          updatedBy: session.user.id,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: session.user.id,
+          actionType: "EDIT_EXCHANGE_RATES",
+          actionDescription: `Rates updated: Buy ${rate.buyRate} EGP, Sell ${rate.sellRate} EGP, Trading=${rate.tradingEnabled}`,
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+
+      return rate;
     });
 
-    const updatedRate = await prisma.exchangeRate.update({
-      where: { id: existingRate.id },
-      data: {
-        buyRate: buyRate || existingRate.buyRate,
-        sellRate: sellRate || existingRate.sellRate,
-        minOrderAmount: minOrderAmount || existingRate.minOrderAmount,
-        maxOrderAmount: maxOrderAmount || existingRate.maxOrderAmount,
-        isAutomatic: isAutomatic !== undefined ? isAutomatic : existingRate.isAutomatic,
-        profitMargin: profitMargin || existingRate.profitMargin,
-        updatedBy: (session.user as any).id,
-      },
-    });
-
-    // Log the action
-    await prisma.auditLog.create({
-      data: {
-        userId: (session.user as any).id,
-        actionType: "EDIT_EXCHANGE_RATES",
-        actionDescription: `Updated exchange rates: Buy ${updatedRate.buyRate}, Sell ${updatedRate.sellRate}`,
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
-    });
-
-    return NextResponse.json(updatedRate);
+    return NextResponse.json(updated);
   } catch (error: any) {
-    console.error("Error updating exchange rates:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to update exchange rates" },
+      { error: error.message || "فشل تحديث أسعار الصرف" },
       { status: 500 }
     );
   }

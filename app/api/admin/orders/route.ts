@@ -4,7 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
 async function checkAdminRole(session: any) {
-  if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role)) {
+  if (
+    !session?.user ||
+    !["ADMIN", "SUPER_ADMIN", "SUPPORT_AGENT"].includes((session.user as any).role)
+  ) {
     return false;
   }
   return true;
@@ -12,46 +15,61 @@ async function checkAdminRole(session: any) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session: any = await getServerSession(authOptions as any);
+    const session = (await getServerSession(authOptions as any)) as any;
 
-    if (!await checkAdminRole(session)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 403 }
-      );
+    if (!(await checkAdminRole(session))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const type = searchParams.get("type");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const search = searchParams.get("search");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20")));
 
     const where: any = {};
-    if (status) where.status = status;
-    if (type) where.type = type;
+    if (status && status !== "ALL") where.status = status;
+    if (type && type !== "ALL") where.type = type;
+    if (search) {
+      where.OR = [
+        { id: { contains: search, mode: "insensitive" } },
+        { orderNumber: { contains: search, mode: "insensitive" } },
+        { fullName: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search, mode: "insensitive" } },
+        { binanceUid: { contains: search, mode: "insensitive" } },
+        { walletNumber: { contains: search, mode: "insensitive" } },
+        { txHash: { contains: search, mode: "insensitive" } },
+      ];
+    }
 
-    const orders = await prisma.order.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              isVerified: true,
+            },
           },
+          statusHistory: {
+            orderBy: { createdAt: "desc" },
+            take: 5,
+          },
+          reviews: true,
         },
-        reviews: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    const total = await prisma.order.count({ where });
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
+    ]);
 
     return NextResponse.json({
       orders,
@@ -59,7 +77,7 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit),
       },
     });
   } catch (error: any) {
@@ -69,4 +87,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

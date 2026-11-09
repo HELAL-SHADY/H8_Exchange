@@ -1,18 +1,25 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import {
   BarChart3,
   FileText,
-  BookOpen,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Users,
   Settings,
+  Shield,
+  LifeBuoy,
   LogOut,
   Menu,
   X,
+  Coins,
+  ChevronRight,
 } from "lucide-react";
 
 export default function AdminLayout({
@@ -22,14 +29,15 @@ export default function AdminLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/login");
+      router.push("/auth/login?callbackUrl=/admin");
     } else if (
       status === "authenticated" &&
-      !["ADMIN", "SUPER_ADMIN"].includes((session?.user as any)?.role)
+      !["ADMIN", "SUPER_ADMIN", "SUPPORT_AGENT"].includes((session?.user as any)?.role)
     ) {
       router.push("/");
     }
@@ -37,162 +45,135 @@ export default function AdminLayout({
 
   if (status === "loading" || !session) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">جاري التحميل...</p>
+      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
+  const role = (session.user as any)?.role || "USER";
+
   const menuItems = [
-    { label: "لوحة التحكم", href: "/admin", icon: BarChart3 },
-    { label: "الطلبات", href: "/admin/orders", icon: FileText },
-    { label: "سجل العمليات", href: "/admin/audit-logs", icon: BookOpen },
-    { label: "الإعدادات", href: "/admin/settings", icon: Settings },
+    { label: "لوحة القيادة والمؤشرات", href: "/admin", icon: BarChart3 },
+    { label: "كل الطلبات", href: "/admin/orders", icon: FileText },
+    { label: "طلبات بانتظار المراجعة", href: "/admin/orders?status=PENDING_REVIEW", icon: Clock },
+    { label: "المستخدمين والمحافظ", href: "/admin/users", icon: Users },
+    { label: "محرك أسعار الصرف", href: "/admin/settings?tab=rates", icon: Coins, adminOnly: true },
+    { label: "تذاكر الدعم الفني", href: "/admin/support", icon: LifeBuoy },
+    { label: "سجل العمليات والتدقيق", href: "/admin/audit-logs", icon: Shield },
+    { label: "إعدادات وبوابات الدفع", href: "/admin/settings", icon: Settings, adminOnly: true },
   ];
 
   return (
-    <div className="min-h-screen flex relative z-10">
+    <div className="min-h-screen bg-[#080808] text-white flex flex-col lg:flex-row relative z-10 font-sans">
+      {/* Mobile Topbar */}
+      <div className="lg:hidden flex items-center justify-between p-4 bg-[#0E0E12] border-b border-white/5">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-xl bg-white/5 text-amber-400"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <span className="font-extrabold text-amber-400 font-mono text-sm tracking-wider">
+            H8 ADMIN
+          </span>
+        </div>
+        <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">
+          {role}
+        </span>
+      </div>
 
-      {/* Mobile Overlay */}
+      {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Admin Sidebar */}
       <aside
-        className={`
-        fixed
-        lg:relative
-        top-0
-        bottom-0
-        right-0
-        z-50
-        w-[260px]
-        h-screen
-        bg-[#0B0B10]/80
-        backdrop-blur-2xl
-        border-l
-        border-white/10
-        shadow-2xl
-        flex
-        flex-col
-        transition-transform
-        duration-200
-        lg:translate-x-0
-        ${sidebarOpen ? "translate-x-0" : "translate-x-full"}
-        `}
+        className={`fixed lg:sticky top-0 right-0 z-50 w-72 h-screen bg-[#0E0E12] border-l border-white/5 p-6 flex flex-col justify-between transition-transform duration-300 lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        }`}
       >
-        <div className="liquid-sheen" />
-        <div className="p-6 border-b border-white/10">
-          <h1 className="text-2xl font-extrabold bg-gradient-to-r from-[#F5B942] to-[#E6A430] bg-clip-text text-transparent">
-            H8 Admin
-          </h1>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <Link href="/admin" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center text-black font-black text-sm">
+                H8
+              </div>
+              <span className="font-extrabold text-white text-base tracking-wider">
+                لوحة الإدارة
+              </span>
+            </Link>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-gray-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+            <div className="text-xs font-bold text-amber-400 truncate">
+              {session?.user?.name}
+            </div>
+            <div className="text-[11px] text-gray-400 truncate">{session?.user?.email}</div>
+            <span className="mt-1.5 inline-block text-[10px] px-2 py-0.5 rounded bg-black/50 text-amber-300 font-mono font-bold">
+              {role}
+            </span>
+          </div>
+
+          <nav className="space-y-1">
+            {menuItems.map((item) => {
+              if (item.adminOnly && role === "SUPPORT_AGENT") return null;
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                    isActive
+                      ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                      : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </div>
+                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-amber-400" />}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <Link key={item.href} href={item.href}>
-                <div
-                  onClick={() => setSidebarOpen(false)}
-                  className="
-                  flex
-                  items-center
-                  gap-3
-                  px-4
-                  py-3
-                  rounded-xl
-                  text-gray-300
-                  hover:bg-white/[0.06]
-                  hover:text-[#F5B942]
-                  hover:border-white/10
-                  border border-transparent
-                  transition-all
-                  "
-                >
-                  <Icon size={20} />
-                  <span className="font-medium text-sm">{item.label}</span>
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="p-4 border-t border-white/10">
-          <button
-            onClick={() => signOut()}
-            className="
-            w-full
-            flex
-            items-center
-            justify-center
-            gap-2
-            rounded-xl
-            bg-red-600/80
-            hover:bg-red-600
-            py-3
-            text-white
-            font-medium
-            border border-red-500/30
-            transition
-            "
+        <div className="pt-4 border-t border-white/5 space-y-2">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5"
           >
-            <LogOut size={18} />
-            تسجيل الخروج
+            <span>العودة للموقع الرئيسي</span>
+          </Link>
+          <button
+            onClick={() => signOut({ callbackUrl: "/auth/login" })}
+            className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-medium text-red-400 hover:bg-red-500/10 transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>تسجيل الخروج</span>
           </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col lg:ml-0 min-w-0">
-
-        {/* Header */}
-        <header
-          className="
-          sticky
-          top-0
-          z-30
-          bg-[#0B0B10]/70
-          backdrop-blur-2xl
-          border-b
-          border-white/10
-          px-6
-          py-4
-          flex
-          items-center
-          justify-between
-          shadow-lg
-          "
-        >
-          <div className="liquid-sheen" />
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-[#F5B942] lg:hidden p-1.5 liquid-pill rounded-xl"
-          >
-            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-
-          <div className="text-right">
-            <p className="text-gray-400 text-xs">
-              مرحباً
-            </p>
-            <p className="font-bold text-white text-sm">
-              {session?.user?.name || "Admin"}
-            </p>
-          </div>
-        </header>
-
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
-          {children}
-        </main>
-
-      </div>
-
+      {/* Main Admin Content */}
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+        {children}
+      </main>
     </div>
   );
 }

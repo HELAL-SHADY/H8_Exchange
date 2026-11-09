@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { motion } from "framer-motion";
+import Link from "next/link";
 import {
   BarChart3,
   Users,
@@ -10,200 +9,193 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle,
+  Coins,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ShieldAlert,
+  ChevronRight,
 } from "lucide-react";
 
-interface DashboardStats {
-  totalOrders: number;
-  pendingOrders: number;
-  approvedOrders: number;
-  rejectedOrders: number;
-  completedOrders: number;
-  totalUsers: number;
-  successRate: number;
-  totalVolume: number;
-  averageRating: number;
-}
-
-export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+export default function AdminDashboardPage() {
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("/api/admin/dashboard");
+      const data = await res.json();
+      setStats(data.stats);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch("/api/admin/dashboard");
-        const data = await response.json();
-        setStats(data.stats);
-      } catch (error) {
-        console.error("Error fetching dashboard stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchStats();
-    const interval = setInterval(fetchStats, 30000); // Refresh every 30 seconds
-
+    const interval = setInterval(fetchStats, 20000);
     return () => clearInterval(interval);
   }, []);
 
   if (loading) {
-    return <div className="text-center text-gray-400">جاري التحميل...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   if (!stats) {
-    return <div className="text-center text-red-400">فشل تحميل الإحصائيات</div>;
+    return <div className="text-center text-red-400 py-12">فشل تحميل إحصائيات الإدارة</div>;
   }
 
-  const statCards = [
-    {
-      label: "إجمالي الطلبات",
-      value: stats.totalOrders,
-      icon: BarChart3,
-      color: "blue",
-    },
-    {
-      label: "طلبات معلقة",
-      value: stats.pendingOrders,
-      icon: Clock,
-      color: "yellow",
-    },
-    {
-      label: "طلبات معتمدة",
-      value: stats.approvedOrders,
-      icon: CheckCircle,
-      color: "green",
-    },
-    {
-      label: "طلبات مرفوضة",
-      value: stats.rejectedOrders,
-      icon: XCircle,
-      color: "red",
-    },
-    {
-      label: "طلبات مكتملة",
-      value: stats.completedOrders,
-      icon: CheckCircle,
-      color: "emerald",
-    },
-    {
-      label: "إجمالي المستخدمين",
-      value: stats.totalUsers,
-      icon: Users,
-      color: "purple",
-    },
-    {
-      label: "معدل النجاح",
-      value: `${stats.successRate}%`,
-      icon: TrendingUp,
-      color: "gold",
-    },
-    {
-      label: "إجمالي الحجم",
-      value: `${Math.round(stats.totalVolume)} EGP`,
-      icon: BarChart3,
-      color: "indigo",
-    },
-  ];
-
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-4xl font-bold">لوحة التحكم</h1>
-        <p className="text-gray-400 mt-2">مرحباً بك في لوحة تحكم الإدارة</p>
-      </motion.div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat, index) => {
-          const Icon = stat.icon;
-          const colorMap: Record<string, string> = {
-            blue: "text-blue-500",
-            yellow: "text-yellow-500",
-            green: "text-green-500",
-            red: "text-red-500",
-            emerald: "text-emerald-500",
-            purple: "text-purple-500",
-            gold: "text-[#F5B942]",
-            indigo: "text-indigo-500",
-          };
-
-          return (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <Card className="hover:border-[#F5B942] transition-colors">
-                <CardContent className="py-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <Icon className={`w-8 h-8 ${colorMap[stat.color]}`} />
-                    <p className="text-gray-500 text-sm">{stat.label}</p>
-                  </div>
-                  <p className="text-3xl font-bold text-white">
-                    {stat.value}
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-black text-white">لوحة القيادة والمؤشرات المالية الحية</h1>
+        <p className="text-xs text-gray-400 mt-1">
+          رصد فوري لحجم التداول الكلي، أرباح الهامش (Spread Margin)، وحالات مراجعة الطلبات.
+        </p>
       </div>
 
-      {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
-        <Card>
-          <CardContent>
-            <h3 className="font-bold text-lg mb-4">الإجراءات السريعة</h3>
-            <div className="space-y-2">
-              <a
-                href="/admin/orders?status=PENDING_REVIEW"
-                className="block px-4 py-2 bg-[#2D2D2D] hover:bg-[#F5B942] hover:text-[#0A0A0A] rounded-lg transition-colors"
-              >
-                عرض الطلبات المعلقة
-              </a>
-              <a
-                href="/admin/settings"
-                className="block px-4 py-2 bg-[#2D2D2D] hover:bg-[#F5B942] hover:text-[#0A0A0A] rounded-lg transition-colors"
-              >
-                تحديث أسعار الصرف
-              </a>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Financial Health Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-5 rounded-2xl bg-[#0E0E12] border border-amber-500/30">
+          <span className="text-xs text-gray-400 font-medium">حجم الشراء الكلي (Buy Volume)</span>
+          <div className="text-2xl font-black text-amber-400 font-mono mt-1">
+            {stats.totalBuyVolumeUsdt} <span className="text-xs text-gray-300">USDT</span>
+          </div>
+          <span className="text-[11px] text-gray-500 mt-1 block">عمليات شراء منفذة</span>
+        </div>
 
-        <Card>
-          <CardContent>
-            <h3 className="font-bold text-lg mb-4">الإحصائيات</h3>
-            <div className="space-y-3">
-              <div>
-                <p className="text-gray-500 text-sm mb-1">متوسط التقييم</p>
-                <p className="text-2xl font-bold text-[#F5B942]">
-                  {stats.averageRating} ⭐
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm mb-1">نسبة الإنجاز</p>
-                <div className="w-full bg-[#2D2D2D] rounded-full h-2">
-                  <div
-                    className="bg-[#F5B942] h-2 rounded-full transition-all"
-                    style={{
-                      width: `${stats.successRate}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+        <div className="p-5 rounded-2xl bg-[#0E0E12] border border-emerald-500/30">
+          <span className="text-xs text-gray-400 font-medium">حجم البيع الكلي (Sell Volume)</span>
+          <div className="text-2xl font-black text-emerald-400 font-mono mt-1">
+            {stats.totalSellVolumeUsdt} <span className="text-xs text-gray-300">USDT</span>
+          </div>
+          <span className="text-[11px] text-gray-500 mt-1 block">عمليات بيع منفذة</span>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-[#0E0E12] border border-white/5">
+          <span className="text-xs text-gray-400 font-medium">أرباح هامش الصرف (Gross Spread)</span>
+          <div className="text-2xl font-black text-white font-mono mt-1">
+            {stats.estimatedSpreadProfitEgp} <span className="text-xs text-amber-400">EGP</span>
+          </div>
+          <span className="text-[11px] text-gray-500 mt-1 block">
+            بناءً على فارق السعر ({stats.spreadPerUsdt} ج.م / USDT)
+          </span>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-[#0E0E12] border border-white/5">
+          <span className="text-xs text-gray-400 font-medium">إجمالي المستخدمين المسجلين</span>
+          <div className="text-2xl font-black text-purple-400 font-mono mt-1">
+            {stats.totalUsers}
+          </div>
+          <span className="text-[11px] text-gray-500 mt-1 block">عملاء نشطين</span>
+        </div>
+      </div>
+
+      {/* Operational Order Flow Status */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Link
+          href="/admin/orders?status=PENDING_REVIEW"
+          className="p-5 rounded-2xl bg-[#0E0E12] border border-amber-500/20 hover:border-amber-500/50 transition-all block group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">بانتظار المراجعة</span>
+            <Clock className="w-4 h-4 text-amber-400" />
+          </div>
+          <div className="text-2xl font-black text-amber-400 mt-2">{stats.pendingOrders}</div>
+          <span className="text-[10px] text-amber-400/80 mt-1 block group-hover:underline">
+            عرض الطلبات العاجلة ←
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/orders?status=APPROVED"
+          className="p-5 rounded-2xl bg-[#0E0E12] border border-blue-500/20 hover:border-blue-500/50 transition-all block group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">معتمدة وجاري التحويل</span>
+            <TrendingUp className="w-4 h-4 text-blue-400" />
+          </div>
+          <div className="text-2xl font-black text-blue-400 mt-2">{stats.approvedOrders}</div>
+          <span className="text-[10px] text-blue-400/80 mt-1 block group-hover:underline">
+            بانتظار إرسال العملة/الكاش ←
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/orders?status=COMPLETED"
+          className="p-5 rounded-2xl bg-[#0E0E12] border border-emerald-500/20 hover:border-emerald-500/50 transition-all block group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">مكتملة بنجاح</span>
+            <CheckCircle className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="text-2xl font-black text-emerald-400 mt-2">{stats.completedOrders}</div>
+          <span className="text-[10px] text-emerald-400/80 mt-1 block group-hover:underline">
+            معدل إنجاز {stats.successRate}%
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/orders?status=REJECTED"
+          className="p-5 rounded-2xl bg-[#0E0E12] border border-red-500/20 hover:border-red-500/50 transition-all block group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">مرفوضة أو ملغية</span>
+            <XCircle className="w-4 h-4 text-red-400" />
+          </div>
+          <div className="text-2xl font-black text-red-400 mt-2">{stats.rejectedOrders}</div>
+          <span className="text-[10px] text-red-400/80 mt-1 block group-hover:underline">
+            عرض أسباب الرفض ←
+          </span>
+        </Link>
+      </div>
+
+      {/* Quick Navigation Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link
+          href="/admin/orders"
+          className="p-6 rounded-3xl bg-gradient-to-br from-[#121218] to-[#0A0A0E] border border-white/5 hover:border-amber-500/30 transition-all space-y-2 block"
+        >
+          <h3 className="text-sm font-bold text-white flex items-center justify-between">
+            <span>إدارة وتدقيق كافة الطلبات</span>
+            <ChevronRight className="w-4 h-4 text-amber-400 rtl:rotate-180" />
+          </h3>
+          <p className="text-xs text-gray-400">
+            فحص إيصالات الدفع، مطابقة مبالغ فودافون كاش وإنستا باي، واعتماد التحويلات للمستخدمين.
+          </p>
+        </Link>
+
+        <Link
+          href="/admin/settings"
+          className="p-6 rounded-3xl bg-gradient-to-br from-[#121218] to-[#0A0A0E] border border-white/5 hover:border-amber-500/30 transition-all space-y-2 block"
+        >
+          <h3 className="text-sm font-bold text-white flex items-center justify-between">
+            <span>تحديث أسعار الصرف وبوابات الدفع</span>
+            <ChevronRight className="w-4 h-4 text-amber-400 rtl:rotate-180" />
+          </h3>
+          <p className="text-xs text-gray-400">
+            تعديل سعر شراء وبيع USDT، تفعيل وتعطيل فودافون كاش أو إنستا باي، وحفظ سجل التغييرات.
+          </p>
+        </Link>
+
+        <Link
+          href="/admin/users"
+          className="p-6 rounded-3xl bg-gradient-to-br from-[#121218] to-[#0A0A0E] border border-white/5 hover:border-amber-500/30 transition-all space-y-2 block"
+        >
+          <h3 className="text-sm font-bold text-white flex items-center justify-between">
+            <span>إدارة حسابات العملاء والصلاحيات</span>
+            <ChevronRight className="w-4 h-4 text-amber-400 rtl:rotate-180" />
+          </h3>
+          <p className="text-xs text-gray-400">
+            توثيق العملاء، إيقاف الحسابات المشبوهة، ومتابعة سجل العمليات الحساسة.
+          </p>
+        </Link>
+      </div>
     </div>
   );
 }
