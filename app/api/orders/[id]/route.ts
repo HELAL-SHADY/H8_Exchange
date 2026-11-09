@@ -34,7 +34,6 @@ export async function GET(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // If authenticated, check role/ownership; if not authenticated, allow basic order retrieval for tracking by exact ID
     if (session?.user?.id) {
       const isStaff = ["ADMIN", "SUPER_ADMIN", "SUPPORT_AGENT"].includes(session.user.role);
       if (!isStaff && order.userId !== session.user.id) {
@@ -69,13 +68,44 @@ export async function PATCH(
 
     const isStaff = session?.user?.role && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
 
-    // If regular user or guest tracking their order
-    if (!isStaff) {
-      if (session?.user?.id && existingOrder.userId !== session.user.id) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    // If caller is authenticated as another non-admin user, deny access
+    if (!isStaff && session?.user?.id && existingOrder.userId !== session.user.id) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { proofImageUrl, proofImageId, txHash, action } = body;
+
+    // Handle user cancellation (Allowed for order owner, regardless of role)
+    if (action === "CANCEL") {
+      if (["COMPLETED", "REJECTED", "CANCELLED"].includes(existingOrder.status)) {
+        return NextResponse.json(
+          { error: "الطلب تم إلغاؤه أو إكماله بالفعل" },
+          { status: 400 }
+        );
       }
 
-      // If order is already completed or rejected, user cannot modify
+      const updated = await prisma.$transaction(async (tx) => {
+        const ord = await tx.order.update({
+          where: { id: params.id },
+          data: { status: "CANCELLED" },
+        });
+        await tx.orderStatusHistory.create({
+          data: {
+            orderId: params.id,
+            fromStatus: existingOrder.status,
+            toStatus: "CANCELLED",
+            note: "Cancelled by user",
+            changedBy: session?.user?.id || "USER",
+          },
+        });
+        return ord;
+      });
+      return NextResponse.json(updated);
+    }
+
+    // Handle user submitting payment proof or blockchain txHash
+    if (proofImageUrl || proofImageId || txHash) {
       if (["COMPLETED", "REJECTED"].includes(existingOrder.status)) {
         return NextResponse.json(
           { error: "لا يمكن تعديل هذا الطلب نظراً لاكتماله أو رفضه" },
@@ -83,38 +113,6 @@ export async function PATCH(
         );
       }
 
-      const body = await request.json();
-      const { proofImageUrl, proofImageId, txHash, action } = body;
-
-      // Handle user cancellation
-      if (action === "CANCEL") {
-        if (["COMPLETED", "REJECTED", "CANCELLED"].includes(existingOrder.status)) {
-          return NextResponse.json(
-            { error: "الطلب تم إلغاؤه أو إكماله بالفعل" },
-            { status: 400 }
-          );
-        }
-
-        const updated = await prisma.$transaction(async (tx) => {
-          const ord = await tx.order.update({
-            where: { id: params.id },
-            data: { status: "CANCELLED" },
-          });
-          await tx.orderStatusHistory.create({
-            data: {
-              orderId: params.id,
-              fromStatus: existingOrder.status,
-              toStatus: "CANCELLED",
-              note: "Cancelled by user",
-              changedBy: session?.user?.id || "USER",
-            },
-          });
-          return ord;
-        });
-        return NextResponse.json(updated);
-      }
-
-      // Handle user payment proof / txHash submission
       const updateData: any = {};
       if (proofImageUrl) updateData.proofImageUrl = proofImageUrl;
       if (proofImageId) updateData.proofImageId = proofImageId;
@@ -158,9 +156,9 @@ export async function PATCH(
       return NextResponse.json(updated);
     }
 
-    // Admin updates are strictly routed to /api/admin/orders/[id]
+    // Any other arbitrary update without proof or cancel is rejected
     return NextResponse.json(
-      { error: "Use administrative routes for admin management" },
+      { error: "Invalid action or missing required parameters" },
       { status: 400 }
     );
   } catch (error: any) {
