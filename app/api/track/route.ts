@@ -13,12 +13,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    const trimmed = orderId.trim();
+
+    // Support lookup by primary CUID id OR by orderNumber (e.g. H8-BUY-261109-9VK4)
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [
+          { id: trimmed },
+          { orderNumber: trimmed },
+          { orderNumber: { equals: trimmed, mode: "insensitive" } },
+        ],
+      },
       select: {
         id: true,
+        orderNumber: true,
         type: true,
         amount: true,
+        usdtAmount: true,
+        egpAmount: true,
+        rateSnapshot: true,
         status: true,
         createdAt: true,
         approvedAt: true,
@@ -27,6 +40,10 @@ export async function GET(request: NextRequest) {
         fullName: true,
         paymentMethod: true,
         receiveMethod: true,
+        proofImageUrl: true,
+        txHash: true,
+        rejectionReason: true,
+        adminNote: true,
       },
     });
 

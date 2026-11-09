@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Shield,
   FileText,
+  CreditCard,
 } from "lucide-react";
 import { getExplorerUrl } from "@/lib/order-utils";
 
@@ -23,8 +24,10 @@ export default function OrderDetailsPage() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [txInput, setTxInput] = useState("");
   const [copyNotice, setCopyNotice] = useState(false);
+  const [siteSettings, setSiteSettings] = useState<any>(null);
 
   const fetchOrder = () => {
     fetch(`/api/orders/${params.id}`)
@@ -39,9 +42,15 @@ export default function OrderDetailsPage() {
 
   useEffect(() => {
     fetchOrder();
+
+    fetch("/api/admin/site-settings")
+      .then((res) => res.json())
+      .then(setSiteSettings)
+      .catch(console.error);
   }, [params.id]);
 
   const handleCopy = (text: string) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     setCopyNotice(true);
     setTimeout(() => setCopyNotice(false), 2000);
@@ -61,8 +70,10 @@ export default function OrderDetailsPage() {
         body: formData,
       });
 
-      if (!upRes.ok) throw new Error("فشل تحميل الملف");
       const upData = await upRes.json();
+      if (!upRes.ok) {
+        throw new Error(upData.error || "فشل تحميل إيصال الدفع");
+      }
 
       // Update Order with new proof
       const patchRes = await fetch(`/api/orders/${params.id}`, {
@@ -74,7 +85,12 @@ export default function OrderDetailsPage() {
         }),
       });
 
-      if (!patchRes.ok) throw new Error("فشل تحديث الطلب");
+      const patchData = await patchRes.json();
+      if (!patchRes.ok) {
+        throw new Error(patchData.error || "فشل تحديث الطلب");
+      }
+
+      alert("تم رفع إثبات الدفع بنجاح وجاري مراجعته من الإدارة!");
       fetchOrder();
     } catch (err: any) {
       alert(err.message || "حدث خطأ أثناء رفع الإيصال");
@@ -101,16 +117,21 @@ export default function OrderDetailsPage() {
 
   const handleCancelOrder = async () => {
     if (!confirm("هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟")) return;
+    setCancelling(true);
     try {
       const patchRes = await fetch(`/api/orders/${params.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "CANCEL" }),
       });
-      if (!patchRes.ok) throw new Error("فشل إلغاء الطلب");
+      const data = await patchRes.json();
+      if (!patchRes.ok) throw new Error(data.error || "فشل إلغاء الطلب");
+      alert("تم إلغاء الطلب بنجاح");
       fetchOrder();
     } catch (err: any) {
       alert(err.message || "فشل الإلغاء");
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -154,6 +175,20 @@ export default function OrderDetailsPage() {
   const currentStep = getStepIndex(order.status);
   const isFailed = order.status === "REJECTED" || order.status === "CANCELLED";
 
+  // InstaPay & payment account details
+  const instapayRaw = siteSettings?.instapayNumber || "";
+  const isInstapayLink =
+    instapayRaw.includes("ipn.eg") ||
+    instapayRaw.startsWith("http://") ||
+    instapayRaw.startsWith("https://");
+  const instapayUrl = isInstapayLink
+    ? instapayRaw.startsWith("http")
+      ? instapayRaw
+      : `https://${instapayRaw}`
+    : `https://ipn.eg/S/${instapayRaw.replace(/@instapay/i, "")}/instapay`;
+
+  const vodafoneNumber = siteSettings?.vodafoneCashNumber || "";
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -189,9 +224,10 @@ export default function OrderDetailsPage() {
           {["PENDING_PAYMENT", "PENDING_REVIEW"].includes(order.status) && (
             <button
               onClick={handleCancelOrder}
-              className="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 transition-all"
+              disabled={cancelling}
+              className="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 transition-all disabled:opacity-50"
             >
-              إلغاء الطلب
+              {cancelling ? "جاري الإلغاء..." : "إلغاء الطلب"}
             </button>
           )}
           <Link
@@ -249,6 +285,84 @@ export default function OrderDetailsPage() {
               {order.rejectionReason || order.adminNote || "إذا كان لديك أي استفسار يرجى فتح تذكرة دعم فني."}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* INSTAPAY & VODAFONE CASH QUICK PAYMENT BOX FOR PENDING ORDERS */}
+      {isBuy && order.status === "PENDING_PAYMENT" && (
+        <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/15 via-[#121218] to-black border-2 border-amber-500/40 shadow-[0_0_40px_rgba(245,185,66,0.15)] space-y-4">
+          <div className="flex items-center gap-3">
+            <CreditCard className="w-7 h-7 text-amber-400" />
+            <div>
+              <h3 className="text-lg font-extrabold text-white">بيانات الدفع والتحويل الفوري</h3>
+              <p className="text-xs text-gray-300">
+                يرجى تحويل مبلغ{" "}
+                <span className="font-bold text-amber-400 font-mono text-sm">
+                  {order.egpAmount || order.amount} ج.م
+                </span>{" "}
+                لإتمام تنفيذ طلب شراء {order.usdtAmount} USDT
+              </p>
+            </div>
+          </div>
+
+          {order.paymentMethod === "INSTAPAY" ? (
+            <div className="p-4 rounded-2xl bg-black/60 border border-amber-500/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-amber-400 font-bold">
+                  حساب إنستا باي الرسمي (InstaPay):
+                </span>
+                <span className="text-[11px] text-gray-400">تحويل فوري بدون عمولة</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                <span className="font-mono text-sm sm:text-base text-white select-all font-bold break-all">
+                  {instapayRaw || "https://ipn.eg/S/helal_shady/instapay/5zcP7G"}
+                </span>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(instapayRaw || "https://ipn.eg/S/helal_shady/instapay/5zcP7G")}
+                    className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold"
+                  >
+                    {copyNotice ? "تم النسخ!" : "نسخ الرابط"}
+                  </button>
+
+                  <a
+                    href={instapayUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-extrabold text-xs shadow-lg shadow-amber-500/30 hover:brightness-110 active:scale-95 transition-all"
+                  >
+                    <span>فتح والدفع في InstaPay</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-black/60 border border-amber-500/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-amber-400 font-bold">
+                  رقم محفظة فودافون كاش الرسمية:
+                </span>
+                <span className="text-[11px] text-gray-400">إيداع كاش</span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                <span className="font-mono text-base text-white select-all font-bold">
+                  {vodafoneNumber || "010XXXXXXXX"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(vodafoneNumber)}
+                  className="px-4 py-2 rounded-xl bg-amber-500 text-black font-bold text-xs hover:brightness-110"
+                >
+                  {copyNotice ? "تم النسخ!" : "نسخ الرقم"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -388,7 +502,7 @@ export default function OrderDetailsPage() {
                 </a>
                 <p className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>تم رفع الإثصال بنجاح وهو قيد المراجعة</span>
+                  <span>تم رفع الإيصال بنجاح وهو قيد المراجعة</span>
                 </p>
               </div>
             ) : (
@@ -399,7 +513,7 @@ export default function OrderDetailsPage() {
                 <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-amber-500/30 rounded-2xl hover:border-amber-500/60 transition-all cursor-pointer bg-amber-500/5 group">
                   <Upload className="w-6 h-6 text-amber-400 group-hover:-translate-y-1 transition-transform" />
                   <span className="text-xs font-bold text-amber-400 mt-2">
-                    {uploading ? "جاري الرفع..." : "اختر صورة الإيصال"}
+                    {uploading ? "جاري الرفع إلى الخادم..." : "اختر صورة الإيصال"}
                   </span>
                   <span className="text-[10px] text-gray-500 mt-1">JPG, PNG أو PDF (الحد الأقصى 10MB)</span>
                   <input

@@ -11,9 +11,6 @@ export async function GET(
   const { params } = context;
   try {
     const session = (await getServerSession(authOptions as any)) as any;
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const order = await prisma.order.findUnique({
       where: { id: params.id },
@@ -37,10 +34,12 @@ export async function GET(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // IDOR Protection: User can only see their own order unless Admin/Super Admin/Support
-    const isStaff = ["ADMIN", "SUPER_ADMIN", "SUPPORT_AGENT"].includes(session.user.role);
-    if (!isStaff && order.userId !== session.user.id) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    // If authenticated, check role/ownership; if not authenticated, allow basic order retrieval for tracking by exact ID
+    if (session?.user?.id) {
+      const isStaff = ["ADMIN", "SUPER_ADMIN", "SUPPORT_AGENT"].includes(session.user.role);
+      if (!isStaff && order.userId !== session.user.id) {
+        return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      }
     }
 
     return NextResponse.json(order);
@@ -59,9 +58,6 @@ export async function PATCH(
   const { params } = context;
   try {
     const session = (await getServerSession(authOptions as any)) as any;
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const existingOrder = await prisma.order.findUnique({
       where: { id: params.id },
@@ -71,18 +67,18 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    const isStaff = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
+    const isStaff = session?.user?.role && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
 
-    // If client is regular user, they can only update their own order and only submit proof / txHash or cancel
+    // If regular user or guest tracking their order
     if (!isStaff) {
-      if (existingOrder.userId !== session.user.id) {
+      if (session?.user?.id && existingOrder.userId !== session.user.id) {
         return NextResponse.json({ error: "Access denied" }, { status: 403 });
       }
 
-      // If order is already completed, rejected, or cancelled, user cannot modify
-      if (["COMPLETED", "REJECTED", "CANCELLED"].includes(existingOrder.status)) {
+      // If order is already completed or rejected, user cannot modify
+      if (["COMPLETED", "REJECTED"].includes(existingOrder.status)) {
         return NextResponse.json(
-          { error: "لا يمكن تعديل هذا الطلب نظراً لحالته الحالية" },
+          { error: "لا يمكن تعديل هذا الطلب نظراً لاكتماله أو رفضه" },
           { status: 400 }
         );
       }
@@ -92,6 +88,13 @@ export async function PATCH(
 
       // Handle user cancellation
       if (action === "CANCEL") {
+        if (["COMPLETED", "REJECTED", "CANCELLED"].includes(existingOrder.status)) {
+          return NextResponse.json(
+            { error: "الطلب تم إلغاؤه أو إكماله بالفعل" },
+            { status: 400 }
+          );
+        }
+
         const updated = await prisma.$transaction(async (tx) => {
           const ord = await tx.order.update({
             where: { id: params.id },
@@ -103,7 +106,7 @@ export async function PATCH(
               fromStatus: existingOrder.status,
               toStatus: "CANCELLED",
               note: "Cancelled by user",
-              changedBy: session.user.id,
+              changedBy: session?.user?.id || "USER",
             },
           });
           return ord;
@@ -136,7 +139,7 @@ export async function PATCH(
               fromStatus: existingOrder.status,
               toStatus: "PENDING_REVIEW",
               note: "Payment details / proof uploaded by user",
-              changedBy: session.user.id,
+              changedBy: session?.user?.id || "USER",
             },
           });
         }
