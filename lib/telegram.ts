@@ -84,11 +84,9 @@ export async function sendTelegramPhoto(photoUrl: string, caption: string): Prom
 function formatStatus(status: string): string {
   switch (status) {
     case "PENDING_REVIEW":
-      return "⏳ قيد المراجعة (Pending Review)";
+      return "🔍 قيد الفحص المصرفي (Bank Verification)";
     case "UNDER_VERIFICATION":
       return "🔍 قيد التحقق (Under Verification)";
-    case "APPROVED":
-      return "✅ تم القبول (Approved)";
     case "REJECTED":
       return "❌ تم الرفض (Rejected)";
     case "COMPLETED":
@@ -110,8 +108,8 @@ function formatMethod(method?: string | null): string {
       return "InstaPay";
     case "BINANCE_PAY":
       return "Binance Pay";
-    case "BYBIT_PAY":
-      return "Bybit Pay";
+    case "BEP20":
+      return "BSC (BEP20)";
     default:
       return method;
   }
@@ -134,7 +132,7 @@ export async function sendNewOrderNotification(order: any): Promise<boolean> {
     `<b>💰 القيمة:</b> <b>${order.amount} ${currency}</b>`,
     `<b>💳 طريقة الدفع/الإرسال:</b> ${formatMethod(order.paymentMethod)}`,
     `<b>📥 طريقة الاستلام:</b> ${formatMethod(order.receiveMethod)}`,
-    `<b>💳 Binance/Bybit ID:</b> <code>${order.binanceUid}</code>`,
+    `<b>💳 وجهة الاستلام:</b> <code>${order.binanceUid || order.walletNumber || "—"}</code>`,
     `<b>👛 رقم المحفظة:</b> <code>${order.walletNumber}</code>`,
     `<b>📅 التاريخ:</b> ${new Date(order.createdAt || Date.now()).toLocaleString("ar-EG", { timeZone: "Africa/Cairo" })}`,
     `--------------------------------------------`,

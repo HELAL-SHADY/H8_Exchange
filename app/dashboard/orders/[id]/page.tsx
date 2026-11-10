@@ -16,16 +16,17 @@ import {
   FileText,
   CreditCard,
 } from "lucide-react";
-import { getExplorerUrl } from "@/lib/order-utils";
+import { useTranslation } from "@/lib/i18n";
 
 export default function OrderDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const { locale } = useTranslation();
+  const text = (ar: string, en: string) => locale === "ar" ? ar : en;
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const [txInput, setTxInput] = useState("");
   const [copyNotice, setCopyNotice] = useState(false);
   const [siteSettings, setSiteSettings] = useState<any>(null);
 
@@ -90,28 +91,12 @@ export default function OrderDetailsPage() {
         throw new Error(patchData.error || "فشل تحديث الطلب");
       }
 
-      alert("تم رفع إثبات الدفع بنجاح وجاري مراجعته من الإدارة!");
+      alert(text("تم رفع إثبات الدفع بنجاح وبدأ الفحص المصرفي.", "Proof uploaded. Bank verification has started."));
       fetchOrder();
     } catch (err: any) {
       alert(err.message || "حدث خطأ أثناء رفع الإيصال");
     } finally {
       setUploading(false);
-    }
-  };
-
-  const handleTxSubmit = async () => {
-    if (!txInput.trim()) return;
-    try {
-      const patchRes = await fetch(`/api/orders/${params.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ txHash: txInput.trim() }),
-      });
-      if (!patchRes.ok) throw new Error("فشل إرسال هاش المعاملة");
-      setTxInput("");
-      fetchOrder();
-    } catch (err: any) {
-      alert(err.message || "حدث خطأ");
     }
   };
 
@@ -155,20 +140,15 @@ export default function OrderDetailsPage() {
   }
 
   const isBuy = order.type === "BUY";
-  const explorerLink = getExplorerUrl(order.network, order.txHash);
-
-  // Status timeline steps
   const steps = [
-    { key: "PENDING_PAYMENT", label: "إنشاء الطلب والدفع" },
-    { key: "PENDING_REVIEW", label: "مراجعة إثبات الدفع" },
-    { key: "APPROVED", label: "الموافقة وجاري التحويل" },
-    { key: "COMPLETED", label: "اكتمل بنجاح" },
+    { key: "PENDING_PAYMENT", label: text("إنشاء الطلب والدفع", "Order created and awaiting payment") },
+    { key: "UNDER_VERIFICATION", label: text("الفحص المصرفي", "Bank verification") },
+    { key: "COMPLETED", label: text("مكتمل بنجاح", "Completed") },
   ];
 
   const getStepIndex = (st: string) => {
-    if (st === "COMPLETED") return 3;
-    if (st === "APPROVED") return 2;
-    if (st === "PENDING_REVIEW" || st === "UNDER_VERIFICATION") return 1;
+    if (st === "COMPLETED") return 2;
+    if (["PENDING_REVIEW", "APPROVED", "UNDER_VERIFICATION"].includes(st)) return 1;
     return 0;
   };
 
@@ -221,7 +201,7 @@ export default function OrderDetailsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {["PENDING_PAYMENT", "PENDING_REVIEW"].includes(order.status) && (
+          {["PENDING_PAYMENT", "PENDING_REVIEW", "APPROVED"].includes(order.status) && (
             <button
               onClick={handleCancelOrder}
               disabled={cancelling}
@@ -452,28 +432,6 @@ export default function OrderDetailsPage() {
               </div>
             </div>
 
-            {/* Blockchain TXID Section */}
-            {order.txHash && (
-              <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-amber-400 font-bold">معرف المعاملة (TXID)</span>
-                  {explorerLink && (
-                    <a
-                      href={explorerLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-amber-400 hover:underline inline-flex items-center gap-1 font-semibold"
-                    >
-                      <span>فحص على البلوك تشين</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
-                <p className="text-xs text-white font-mono break-all bg-black/40 p-2.5 rounded-xl border border-white/5">
-                  {order.txHash}
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
@@ -527,25 +485,6 @@ export default function OrderDetailsPage() {
               </div>
             )}
 
-            {/* If Sell order and no TXID yet, prompt user */}
-            {!isBuy && !order.txHash && order.status !== "CANCELLED" && (
-              <div className="pt-4 border-t border-white/5 space-y-3">
-                <h4 className="text-xs font-bold text-amber-400">إدخال هاش المعاملة (TXID)</h4>
-                <input
-                  type="text"
-                  value={txInput}
-                  onChange={(e) => setTxInput(e.target.value)}
-                  placeholder="الصق هاش التحويل هنا..."
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-amber-500 font-mono"
-                />
-                <button
-                  onClick={handleTxSubmit}
-                  className="w-full py-2.5 rounded-xl bg-amber-500 text-black font-bold text-xs hover:brightness-110 shadow-lg shadow-amber-500/20"
-                >
-                  تأكيد إرسال الـ TXID
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Status Transitions Audit Trail */}

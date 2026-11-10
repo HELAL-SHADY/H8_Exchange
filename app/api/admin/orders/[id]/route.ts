@@ -26,7 +26,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const { action, adminNote, rejectionReason, txHash } = await request.json();
+    const { action, adminNote, rejectionReason } = await request.json();
 
     const existingOrder = await prisma.order.findUnique({
       where: { id: params.id },
@@ -37,9 +37,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // Role boundary: Support Agent can view and add notes, but cannot approve/complete/reject financial state
+    // Role boundary: Support Agent can view and add notes, but cannot complete or reject orders.
     const isFullAdmin = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
-    if (!isFullAdmin && ["APPROVE", "COMPLETE", "REJECT"].includes(action)) {
+    if (!isFullAdmin && ["COMPLETE", "REJECT"].includes(action)) {
       return NextResponse.json(
         { error: "موظف الدعم الفني غير مصرح له بتغيير الحالة المالية للطلب" },
         { status: 403 }
@@ -52,31 +52,23 @@ export async function PATCH(
       adminNote: adminNote !== undefined ? adminNote : existingOrder.adminNote,
     };
 
-    if (txHash) {
-      updateData.txHash = txHash;
-    }
-
     switch (action) {
-      case "APPROVE":
-        newStatus = "APPROVED";
-        updateData.status = newStatus;
-        updateData.approvedBy = session.user.id;
-        updateData.approvedAt = now;
-        break;
       case "REJECT":
+        if (["COMPLETED", "REJECTED", "CANCELLED"].includes(existingOrder.status)) {
+          return NextResponse.json({ error: "لا يمكن تغيير حالة هذا الطلب" }, { status: 400 });
+        }
         newStatus = "REJECTED";
         updateData.status = newStatus;
         updateData.rejectionReason = rejectionReason || adminNote || "لم يتم استيفاء شروط العملية";
         updateData.rejectedAt = now;
         break;
       case "COMPLETE":
+        if (!["UNDER_VERIFICATION", "APPROVED"].includes(existingOrder.status)) {
+          return NextResponse.json({ error: "يجب أن يكون الطلب قيد الفحص المصرفي قبل إكماله" }, { status: 400 });
+        }
         newStatus = "COMPLETED";
         updateData.status = newStatus;
         updateData.completedAt = now;
-        break;
-      case "VERIFY":
-        newStatus = "UNDER_VERIFICATION";
-        updateData.status = newStatus;
         break;
       case "NOTE_ONLY":
         // Only update adminNote
@@ -105,10 +97,8 @@ export async function PATCH(
 
         // User in-app notification
         const titleMap: any = {
-          APPROVED: "✅ تمت الموافقة على طلبك",
           COMPLETED: "🎉 تم تنفيذ طلبك بنجاح",
           REJECTED: "❌ تم رفض طلبك",
-          UNDER_VERIFICATION: "🔍 طلبك قيد الفحص والتحقق المصرفي",
         };
 
         await tx.notification.create({
@@ -120,7 +110,7 @@ export async function PATCH(
                 ? "ORDER_COMPLETED"
                 : newStatus === "REJECTED"
                 ? "ORDER_REJECTED"
-                : "ORDER_APPROVED",
+                : "ORDER_SUBMITTED",
             title: titleMap[newStatus] || "تحديث على حالة طلبك",
             message:
               rejectionReason ||
@@ -134,12 +124,7 @@ export async function PATCH(
           data: {
             userId: session.user.id,
             orderId: ord.id,
-            actionType:
-              newStatus === "COMPLETED"
-                ? "MARK_COMPLETED"
-                : newStatus === "REJECTED"
-                ? "REJECT_ORDER"
-                : "APPROVE_ORDER",
+            actionType: newStatus === "COMPLETED" ? "MARK_COMPLETED" : "REJECT_ORDER",
             actionDescription: `Admin ${session.user.name} changed status of ${ord.orderNumber || ord.id} to ${newStatus}`,
             ipAddress: request.headers.get("x-forwarded-for") || "unknown",
           },
@@ -156,7 +141,13 @@ export async function PATCH(
       console.warn("Telegram status alert failed:", e);
     }
 
-    return NextResponse.json(updatedOrder);
+    const { txHash, ...visibleOrder } = updatedOrder;
+    return NextResponse.json({
+      ...visibleOrder,
+      status: ["PENDING_REVIEW", "APPROVED"].includes(updatedOrder.status)
+        ? "UNDER_VERIFICATION"
+        : updatedOrder.status,
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Failed to update order status" },

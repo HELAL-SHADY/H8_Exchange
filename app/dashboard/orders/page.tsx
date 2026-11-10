@@ -14,8 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 export default function UserOrdersPage() {
+  const { locale } = useTranslation();
+  const text = (ar: string, en: string) => locale === "ar" ? ar : en;
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -57,9 +60,9 @@ export default function UserOrdersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white">إدارة طلباتي</h1>
+          <h1 className="text-2xl font-black text-white">{text("إدارة طلباتي", "My orders")}</h1>
           <p className="text-sm text-gray-400 mt-1">
-            سجل وتفاصيل كافة طلبات بيع وشراء USDT الخاصة بك مع التتبع اللحظي للحالة.
+            {text("سجل وتفاصيل كافة طلبات بيع وشراء USDT الخاصة بك مع التتبع اللحظي للحالة.", "View and track all your USDT buy and sell orders.")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -67,13 +70,13 @@ export default function UserOrdersPage() {
             href="/buy"
             className="px-4 py-2.5 rounded-xl bg-amber-500 text-black font-bold text-xs hover:brightness-110 shadow-lg shadow-amber-500/20"
           >
-            + شراء جديد
+            + {text("شراء جديد", "New buy")}
           </Link>
           <Link
             href="/sell"
             className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/10"
           >
-            + بيع جديد
+            + {text("بيع جديد", "New sell")}
           </Link>
         </div>
       </div>
@@ -87,7 +90,7 @@ export default function UserOrdersPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث برقم الطلب، المعرف، أو هاش المعاملة..."
+              placeholder={text("ابحث برقم الطلب أو المعرف...", "Search by order number or ID...")}
               className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -101,9 +104,9 @@ export default function UserOrdersPage() {
               }}
               className="px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-amber-500"
             >
-              <option value="ALL">جميع الأنواع</option>
-              <option value="BUY">شراء USDT</option>
-              <option value="SELL">بيع USDT</option>
+              <option value="ALL">{text("جميع الأنواع", "All types")}</option>
+              <option value="BUY">{text("شراء USDT", "Buy USDT")}</option>
+              <option value="SELL">{text("بيع USDT", "Sell USDT")}</option>
             </select>
 
             <select
@@ -114,20 +117,19 @@ export default function UserOrdersPage() {
               }}
               className="px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-amber-500"
             >
-              <option value="ALL">جميع الحالات</option>
-              <option value="PENDING_PAYMENT">بانتظار الدفع</option>
-              <option value="PENDING_REVIEW">بانتظار المراجعة</option>
-              <option value="APPROVED">معتمد وجاري التحويل</option>
-              <option value="COMPLETED">مكتمل</option>
-              <option value="REJECTED">مرفوض</option>
-              <option value="CANCELLED">ملغي</option>
+              <option value="ALL">{text("جميع الحالات", "All statuses")}</option>
+              <option value="PENDING_PAYMENT">{text("بانتظار الدفع", "Pending payment")}</option>
+              <option value="UNDER_VERIFICATION">{text("الفحص المصرفي", "Bank verification")}</option>
+              <option value="COMPLETED">{text("مكتمل", "Completed")}</option>
+              <option value="REJECTED">{text("مرفوض", "Rejected")}</option>
+              <option value="CANCELLED">{text("ملغي", "Cancelled")}</option>
             </select>
 
             <button
               type="submit"
               className="px-5 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-bold border border-amber-500/30"
             >
-              تصفية
+              {text("تصفية", "Filter")}
             </button>
           </div>
         </form>
@@ -138,26 +140,26 @@ export default function UserOrdersPage() {
         {loading ? (
           <div className="p-12 text-center">
             <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-xs text-gray-400 mt-3">جاري تحميل سجل الطلبات...</p>
+            <p className="text-xs text-gray-400 mt-3">{text("جاري تحميل سجل الطلبات...", "Loading orders...")}</p>
           </div>
         ) : orders.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <Receipt className="w-12 h-12 text-gray-600 mx-auto" />
-            <p className="text-sm text-gray-400">لا توجد طلبات تطابق معايير البحث الحالية.</p>
+            <p className="text-sm text-gray-400">{text("لا توجد طلبات تطابق معايير البحث الحالية.", "No orders match your search.")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-right text-sm">
               <thead className="bg-[#14141A] text-gray-400 text-xs border-b border-white/5">
                 <tr>
-                  <th className="py-3.5 px-4 font-semibold">رقم الطلب</th>
-                  <th className="py-3.5 px-4 font-semibold">النوع</th>
-                  <th className="py-3.5 px-4 font-semibold">المبلغ (USDT)</th>
-                  <th className="py-3.5 px-4 font-semibold">المبلغ (EGP)</th>
-                  <th className="py-3.5 px-4 font-semibold">السعر المطبق</th>
-                  <th className="py-3.5 px-4 font-semibold">الحالة</th>
-                  <th className="py-3.5 px-4 font-semibold">تاريخ الإنشاء</th>
-                  <th className="py-3.5 px-4 font-semibold text-center">التفاصيل</th>
+                  <th className="py-3.5 px-4 font-semibold">{text("رقم الطلب", "Order number")}</th>
+                  <th className="py-3.5 px-4 font-semibold">{text("النوع", "Type")}</th>
+                  <th className="py-3.5 px-4 font-semibold">USDT</th>
+                  <th className="py-3.5 px-4 font-semibold">EGP</th>
+                  <th className="py-3.5 px-4 font-semibold">{text("السعر المطبق", "Rate")}</th>
+                  <th className="py-3.5 px-4 font-semibold">{text("الحالة", "Status")}</th>
+                  <th className="py-3.5 px-4 font-semibold">{text("تاريخ الإنشاء", "Created")}</th>
+                  <th className="py-3.5 px-4 font-semibold text-center">{text("التفاصيل", "Details")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -176,14 +178,14 @@ export default function UserOrdersPage() {
                               : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                           }`}
                         >
-                          {isBuy ? "شراء USDT" : "بيع USDT"}
+                          {isBuy ? text("شراء USDT", "Buy USDT") : text("بيع USDT", "Sell USDT")}
                         </span>
                       </td>
                       <td className="py-4 px-4 font-bold text-white">
                         {ord.usdtAmount || ord.amount} USDT
                       </td>
                       <td className="py-4 px-4 text-gray-300">
-                        {ord.egpAmount ? `${ord.egpAmount} ج.م` : "-"}
+                        {ord.egpAmount ? `${ord.egpAmount} EGP` : "-"}
                       </td>
                       <td className="py-4 px-4 text-xs text-gray-400">
                         {ord.rateSnapshot ? `${ord.rateSnapshot} EGP` : "-"}
@@ -201,11 +203,21 @@ export default function UserOrdersPage() {
                           {ord.status === "COMPLETED" && <CheckCircle2 className="w-3 h-3" />}
                           {ord.status === "REJECTED" && <XCircle className="w-3 h-3" />}
                           {ord.status.includes("PENDING") && <Clock className="w-3 h-3" />}
-                          <span>{ord.status}</span>
+                          <span>{ord.status === "PENDING_PAYMENT"
+                            ? text("بانتظار الدفع", "Pending payment")
+                            : ["PENDING_REVIEW", "APPROVED", "UNDER_VERIFICATION"].includes(ord.status)
+                            ? text("الفحص المصرفي", "Bank verification")
+                            : ord.status === "COMPLETED"
+                            ? text("مكتمل", "Completed")
+                            : ord.status === "REJECTED"
+                            ? text("مرفوض", "Rejected")
+                            : ord.status === "CANCELLED"
+                            ? text("ملغي", "Cancelled")
+                            : ord.status}</span>
                         </span>
                       </td>
                       <td className="py-4 px-4 text-xs text-gray-400">
-                        {new Date(ord.createdAt).toLocaleDateString("ar-EG")}
+                        {new Date(ord.createdAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")}
                       </td>
                       <td className="py-4 px-4 text-center">
                         <Link

@@ -24,7 +24,7 @@ export async function GET() {
           binanceUid: "",
           vodafoneCashNumber: "",
           instapayNumber: "",
-          bybitPayId: "",
+          usdtBep20Address: "",
           telegramUsername: "",
           supportEmail: "",
           announcement: "",
@@ -33,7 +33,7 @@ export async function GET() {
           instapayEnabled: true,
           vodafoneEnabled: true,
           binanceEnabled: true,
-          bybitEnabled: true,
+          bep20Enabled: true,
         },
       });
     }
@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest) {
       binanceUid,
       vodafoneCashNumber,
       instapayNumber,
-      bybitPayId,
+      usdtBep20Address,
       telegramUsername,
       supportEmail,
       announcement,
@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest) {
       instapayEnabled,
       vodafoneEnabled,
       binanceEnabled,
-      bybitEnabled,
+      bep20Enabled,
     } = body;
 
     const existing = await prisma.siteSettings.findFirst();
@@ -83,7 +83,7 @@ export async function PUT(request: NextRequest) {
           ...(binanceUid !== undefined && { binanceUid }),
           ...(vodafoneCashNumber !== undefined && { vodafoneCashNumber }),
           ...(instapayNumber !== undefined && { instapayNumber }),
-          ...(bybitPayId !== undefined && { bybitPayId }),
+          ...(usdtBep20Address !== undefined && { usdtBep20Address }),
           ...(telegramUsername !== undefined && { telegramUsername }),
           ...(supportEmail !== undefined && { supportEmail }),
           ...(announcement !== undefined && { announcement }),
@@ -92,7 +92,7 @@ export async function PUT(request: NextRequest) {
           ...(instapayEnabled !== undefined && { instapayEnabled }),
           ...(vodafoneEnabled !== undefined && { vodafoneEnabled }),
           ...(binanceEnabled !== undefined && { binanceEnabled }),
-          ...(bybitEnabled !== undefined && { bybitEnabled }),
+          ...(bep20Enabled !== undefined && { bep20Enabled }),
         },
       });
     } else {
@@ -101,7 +101,7 @@ export async function PUT(request: NextRequest) {
           binanceUid: binanceUid || "",
           vodafoneCashNumber: vodafoneCashNumber || "",
           instapayNumber: instapayNumber || "",
-          bybitPayId: bybitPayId || "",
+          usdtBep20Address: usdtBep20Address || "",
           telegramUsername: telegramUsername || "",
           supportEmail: supportEmail || "",
           announcement: announcement || "",
@@ -110,7 +110,7 @@ export async function PUT(request: NextRequest) {
           instapayEnabled: instapayEnabled ?? true,
           vodafoneEnabled: vodafoneEnabled ?? true,
           binanceEnabled: binanceEnabled ?? true,
-          bybitEnabled: bybitEnabled ?? true,
+          bep20Enabled: bep20Enabled ?? true,
         },
       });
     }

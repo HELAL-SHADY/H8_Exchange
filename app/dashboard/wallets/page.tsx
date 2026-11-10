@@ -11,7 +11,7 @@ export default function WalletsPage() {
   const [formData, setFormData] = useState({
     label: "",
     type: "VODAFONE_CASH",
-    network: "TRC20",
+    network: "BEP20",
     address: "",
     isDefault: false,
   });
@@ -42,7 +42,7 @@ export default function WalletsPage() {
       setFormData({
         label: "",
         type: "VODAFONE_CASH",
-        network: "TRC20",
+        network: "BEP20",
         address: "",
         isDefault: false,
       });
@@ -172,7 +172,6 @@ export default function WalletsPage() {
                   <option value="VODAFONE_CASH">فودافون كاش (Vodafone Cash)</option>
                   <option value="INSTAPAY">إنستا باي (InstaPay)</option>
                   <option value="BINANCE_PAY">معرف بينانس (Binance UID)</option>
-                  <option value="BYBIT_PAY">معرف بايبت (Bybit UID)</option>
                   <option value="CRYPTO_WALLET">محفظة كريبتو خارجية (On-chain Wallet)</option>
                 </select>
               </div>
@@ -185,10 +184,7 @@ export default function WalletsPage() {
                     onChange={(e) => setFormData({ ...formData, network: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-amber-500"
                   >
-                    <option value="TRC20">TRON (TRC20) - الأسرع والأقل عمولة</option>
                     <option value="BEP20">BNB Smart Chain (BEP20)</option>
-                    <option value="ERC20">Ethereum (ERC20)</option>
-                    <option value="POLYGON">Polygon (MATIC)</option>
                   </select>
                 </div>
               )}

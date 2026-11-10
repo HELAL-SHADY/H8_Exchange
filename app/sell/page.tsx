@@ -7,37 +7,33 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Wrench, ShieldCheck, Copy, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
-type SellPaymentNetwork = "TRC20" | "BEP20" | "BINANCE_PAY" | "BYBIT_PAY";
 type SellReceiveMethod = "VODAFONE_CASH" | "INSTAPAY";
 
 interface SiteSettingsState {
   sellEnabled: boolean;
   vodafoneEnabled: boolean;
   instapayEnabled: boolean;
-  binanceEnabled: boolean;
-  bybitEnabled: boolean;
-  binanceUid?: string;
-  bybitPayId?: string;
-  usdtTrc20Address?: string;
+  bep20Enabled: boolean;
   usdtBep20Address?: string;
 }
 
 export default function SellPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { locale } = useTranslation();
+  const text = (ar: string, en: string) => locale === "ar" ? ar : en;
   const [loading, setLoading] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(50.0);
   const [minOrder, setMinOrder] = useState(10);
   const [maxOrder, setMaxOrder] = useState(10000);
 
-  const [networkMethod, setNetworkMethod] = useState<SellPaymentNetwork>("TRC20");
   const [receiveMethod, setReceiveMethod] = useState<SellReceiveMethod>("VODAFONE_CASH");
 
   const [orderData, setOrderData] = useState({
     amountUsdt: "",
     receivingAccount: "", // Vodafone Cash mobile or InstaPay address
-    txHash: "",
   });
 
   const [siteSettings, setSiteSettings] = useState<SiteSettingsState | null>(null);
@@ -66,12 +62,8 @@ export default function SellPage() {
           sellEnabled: data.sellEnabled ?? true,
           vodafoneEnabled: data.vodafoneEnabled ?? true,
           instapayEnabled: data.instapayEnabled ?? true,
-          binanceEnabled: data.binanceEnabled ?? true,
-          bybitEnabled: data.bybitEnabled ?? true,
-          binanceUid: data.binanceUid,
-          bybitPayId: data.bybitPayId,
-          usdtTrc20Address: data.usdtTrc20Address || "TX9H8ExchangeDepositOfficialTrc20Address",
-          usdtBep20Address: data.usdtBep20Address || "0x8H8ExchangeDepositOfficialBep20Address",
+          bep20Enabled: data.bep20Enabled ?? true,
+          usdtBep20Address: data.usdtBep20Address || "",
         };
         setSiteSettings(settings);
 
@@ -93,11 +85,7 @@ export default function SellPage() {
   };
 
   const getDepositDestination = () => {
-    if (networkMethod === "TRC20") return siteSettings?.usdtTrc20Address || "TRC20-DEPOSIT-H8-OFFICIAL";
-    if (networkMethod === "BEP20") return siteSettings?.usdtBep20Address || "BEP20-DEPOSIT-H8-OFFICIAL";
-    if (networkMethod === "BINANCE_PAY") return siteSettings?.binanceUid || "BINANCE-UID-H8";
-    if (networkMethod === "BYBIT_PAY") return siteSettings?.bybitPayId || "BYBIT-ID-H8";
-    return "";
+    return siteSettings?.usdtBep20Address || "";
   };
 
   const handleCopyDeposit = () => {
@@ -110,13 +98,17 @@ export default function SellPage() {
     e.preventDefault();
 
     if (siteSettings && !siteSettings.sellEnabled) {
-      alert("عمليات البيع متوقفة حالياً للصيانة وسوف تتاح قريباً.");
+      alert(text("عمليات البيع متوقفة حالياً للصيانة وسوف تتاح قريباً.", "Selling is temporarily paused for maintenance."));
+      return;
+    }
+    if (!siteSettings?.bep20Enabled || !getDepositDestination()) {
+      alert(text("الإيداع عبر شبكة BSC غير متاح حاليًا.", "BSC deposits are currently unavailable."));
       return;
     }
 
     const usdt = parseFloat(orderData.amountUsdt);
     if (usdt < minOrder || usdt > maxOrder) {
-      alert(`المبلغ يجب أن يكون بين ${minOrder} USDT و ${maxOrder} USDT`);
+      alert(text(`المبلغ يجب أن يكون بين ${minOrder} و ${maxOrder} USDT`, `Amount must be between ${minOrder} and ${maxOrder} USDT`));
       return;
     }
 
@@ -129,12 +121,11 @@ export default function SellPage() {
         body: JSON.stringify({
           type: "SELL",
           amount: usdt,
-          binanceUid: networkMethod === "BINANCE_PAY" ? getDepositDestination() : "",
+          binanceUid: "",
           walletNumber: orderData.receivingAccount,
-          paymentMethod: networkMethod,
+          paymentMethod: "BEP20",
           receiveMethod,
-          network: ["TRC20", "BEP20"].includes(networkMethod) ? networkMethod : null,
-          txHash: orderData.txHash || null,
+          network: "BEP20",
         }),
       });
 
@@ -161,22 +152,22 @@ export default function SellPage() {
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mb-3">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>تحويل فوري وسريع للجنيه المصري فور تأكيد البلوك تشين</span>
+            <span>{text("تحويل سريع للجنيه المصري بعد التحقق من الإيداع", "Fast EGP payout after deposit verification")}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            بيع <span className="text-amber-400">USDT</span> واستلام الجنيه المصري
+            {text("بيع", "Sell")} <span className="text-amber-400">USDT</span> {text("واستلام الجنيه المصري", "and receive EGP")}
           </h1>
           <p className="text-gray-400 text-sm mt-2">
-            حول دولارات USDT إلى كاش مصري على حساب فودافون كاش أو إنستا باي بأعلى سعر وأقل عمولة.
+            {text("حوّل USDT عبر شبكة BSC واستلم الجنيه المصري عبر فودافون كاش أو إنستا باي.", "Send USDT on BSC and receive EGP through Vodafone Cash or InstaPay.")}
           </p>
         </motion.div>
 
         {!settingsLoading && siteSettings && !siteSettings.sellEnabled ? (
           <div className="max-w-xl mx-auto p-8 rounded-3xl bg-[#111116] border border-amber-500/40 text-center space-y-4">
             <Wrench className="w-12 h-12 text-amber-400 mx-auto" />
-            <h2 className="text-xl font-bold text-white">خدمة البيع متوقفة مؤقتاً للصيانة</h2>
+            <h2 className="text-xl font-bold text-white">{text("خدمة البيع متوقفة مؤقتاً للصيانة", "Selling is temporarily paused for maintenance")}</h2>
             <p className="text-gray-400 text-sm">
-              جاري تحديث الخوادم وبوابات الدفع وسوف تعود الخدمة للعمل خلال قليل.
+              {text("سيتم استئناف الخدمة قريبًا.", "The service will resume soon.")}
             </p>
           </div>
         ) : (
@@ -187,52 +178,19 @@ export default function SellPage() {
                   {/* Step 1: Network Selection */}
                   <div>
                     <label className="text-xs font-bold text-gray-300 block mb-2">
-                      1. اختر شبكة أو طريقة إيداع الـ USDT
+                      {text("1. شبكة إيداع USDT", "1. USDT deposit network")}
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-1 gap-2">
                       <button
                         type="button"
-                        onClick={() => setNetworkMethod("TRC20")}
+                        disabled={!siteSettings?.bep20Enabled}
                         className={`p-3 rounded-2xl border text-xs font-bold transition-all text-center ${
-                          networkMethod === "TRC20"
+                          siteSettings?.bep20Enabled
                             ? "bg-amber-500/20 border-amber-500 text-amber-400"
-                            : "bg-black/40 border-white/10 text-gray-400 hover:text-white"
+                            : "bg-black/40 border-white/10 text-gray-500 cursor-not-allowed"
                         }`}
                       >
-                        TRC20 (Tron)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNetworkMethod("BEP20")}
-                        className={`p-3 rounded-2xl border text-xs font-bold transition-all text-center ${
-                          networkMethod === "BEP20"
-                            ? "bg-amber-500/20 border-amber-500 text-amber-400"
-                            : "bg-black/40 border-white/10 text-gray-400 hover:text-white"
-                        }`}
-                      >
-                        BEP20 (BSC)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNetworkMethod("BINANCE_PAY")}
-                        className={`p-3 rounded-2xl border text-xs font-bold transition-all text-center ${
-                          networkMethod === "BINANCE_PAY"
-                            ? "bg-amber-500/20 border-amber-500 text-amber-400"
-                            : "bg-black/40 border-white/10 text-gray-400 hover:text-white"
-                        }`}
-                      >
-                        Binance Pay
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNetworkMethod("BYBIT_PAY")}
-                        className={`p-3 rounded-2xl border text-xs font-bold transition-all text-center ${
-                          networkMethod === "BYBIT_PAY"
-                            ? "bg-amber-500/20 border-amber-500 text-amber-400"
-                            : "bg-black/40 border-white/10 text-gray-400 hover:text-white"
-                        }`}
-                      >
-                        Bybit Pay
+                        BSC (BEP20) — USDT
                       </button>
                     </div>
                   </div>
@@ -241,55 +199,57 @@ export default function SellPage() {
                   <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-amber-400 font-bold">
-                        عنوان / حساب الإيداع الرسمي لمنصة H8:
+                        {text("عنوان إيداع USDT الرسمي (BSC):", "Official USDT deposit address (BSC):")}
                       </span>
-                      {copyNotice && <span className="text-[10px] text-amber-400 font-bold">تم النسخ!</span>}
+                      {copyNotice && <span className="text-[10px] text-amber-400 font-bold">{text("تم النسخ!", "Copied!")}</span>}
                     </div>
                     <div className="flex items-center justify-between bg-black/50 p-3 rounded-xl border border-white/10">
                       <span className="text-xs font-mono text-white font-bold break-all">
-                        {getDepositDestination()}
+                        {getDepositDestination() || text("لم يتم إعداد العنوان بعد", "Address not configured yet")}
                       </span>
                       <button
                         type="button"
                         onClick={handleCopyDeposit}
                         className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 ml-2 shrink-0"
-                        title="نسخ العنوان"
+                        title={text("نسخ العنوان", "Copy address")}
                       >
                         <Copy className="w-4 h-4" />
                       </button>
                     </div>
                     <p className="text-[10px] text-gray-400">
-                      يرجى التحويل إلى هذا العنوان فقط والتأكد من تطابق الشبكة ({networkMethod}).
+                      {text("حوّل عبر شبكة BSC (BEP20) فقط إلى هذا العنوان.", "Send only over the BSC (BEP20) network to this address.")}
                     </p>
                   </div>
 
                   {/* Step 2: Choose EGP Receiving Method */}
                   <div>
                     <label className="text-xs font-bold text-gray-300 block mb-2">
-                      2. طريقة استلام الجنيه المصري (EGP)
+                      {text("2. طريقة استلام الجنيه المصري (EGP)", "2. EGP payout method")}
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
+                        disabled={!siteSettings?.vodafoneEnabled}
                         onClick={() => setReceiveMethod("VODAFONE_CASH")}
-                        className={`p-3.5 rounded-2xl border text-xs font-bold transition-all text-center ${
+                        className={`p-3.5 rounded-2xl border text-xs font-bold transition-all text-center disabled:opacity-40 disabled:cursor-not-allowed ${
                           receiveMethod === "VODAFONE_CASH"
                             ? "bg-amber-500/20 border-amber-500 text-amber-400"
                             : "bg-black/40 border-white/10 text-gray-400 hover:text-white"
                         }`}
                       >
-                        فودافون كاش / محافظ الكاش
+                        Vodafone Cash
                       </button>
                       <button
                         type="button"
+                        disabled={!siteSettings?.instapayEnabled}
                         onClick={() => setReceiveMethod("INSTAPAY")}
-                        className={`p-3.5 rounded-2xl border text-xs font-bold transition-all text-center ${
+                        className={`p-3.5 rounded-2xl border text-xs font-bold transition-all text-center disabled:opacity-40 disabled:cursor-not-allowed ${
                           receiveMethod === "INSTAPAY"
                             ? "bg-amber-500/20 border-amber-500 text-amber-400"
                             : "bg-black/40 border-white/10 text-gray-400 hover:text-white"
                         }`}
                       >
-                        إنستا باي (InstaPay)
+                        InstaPay
                       </button>
                     </div>
                   </div>
@@ -298,13 +258,13 @@ export default function SellPage() {
                   <div>
                     <label className="text-xs text-gray-300 block mb-1">
                       {receiveMethod === "VODAFONE_CASH"
-                        ? "رقم محفظة فودافون كاش لاستلام المبلغ"
-                        : "عنوان إنستا باي (IPA) أو رقم الهاتف المسجل"}
+                        ? text("رقم محفظة فودافون كاش لاستلام المبلغ", "Vodafone Cash number to receive EGP")
+                        : text("عنوان إنستا باي (IPA) أو رقم الهاتف المسجل", "InstaPay address (IPA) or registered phone number")}
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder={receiveMethod === "VODAFONE_CASH" ? "010XXXXXXXX" : "010XXXXXXXX أو name@instapay"}
+                      placeholder={receiveMethod === "VODAFONE_CASH" ? "010XXXXXXXX" : "010XXXXXXXX or name@instapay"}
                       value={orderData.receivingAccount}
                       onChange={(e) => setOrderData({ ...orderData, receivingAccount: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-amber-500"
@@ -313,7 +273,7 @@ export default function SellPage() {
 
                   {/* USDT Amount */}
                   <div>
-                    <label className="text-xs text-gray-300 block mb-1">المبلغ المطلوب بيعه (USDT)</label>
+                    <label className="text-xs text-gray-300 block mb-1">{text("المبلغ المطلوب بيعه (USDT)", "USDT amount to sell")}</label>
                     <input
                       type="number"
                       required
@@ -325,33 +285,19 @@ export default function SellPage() {
                       className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-white text-lg font-bold font-mono focus:outline-none focus:border-amber-500"
                     />
                     <div className="mt-3 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
-                      <span className="text-xs text-gray-300">المبلغ الصافي الذي سيصلك:</span>
+                      <span className="text-xs text-gray-300">{text("المبلغ الصافي الذي سيصلك:", "You will receive:")}</span>
                       <span className="text-lg font-black text-emerald-400 font-mono">
-                        {amountEgp} ج.م
+                        {amountEgp} EGP
                       </span>
                     </div>
                   </div>
 
-                  {/* Blockchain Transaction Hash (Optional at creation, can be added later) */}
-                  <div>
-                    <label className="text-xs text-gray-300 block mb-1">
-                      هاش المعاملة TXID (يمكنك إضافته الآن أو بعد إتمام التحويل من صفحة تتبع الطلب)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="الصق الـ Transaction Hash هنا..."
-                      value={orderData.txHash}
-                      onChange={(e) => setOrderData({ ...orderData, txHash: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-
                   <button
                     type="submit"
-                    disabled={loading || !orderData.amountUsdt || !orderData.receivingAccount}
+                    disabled={loading || !siteSettings?.bep20Enabled || !getDepositDestination() || !orderData.amountUsdt || !orderData.receivingAccount}
                     className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-extrabold text-sm hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-amber-500/20 disabled:opacity-50"
                   >
-                    {loading ? "جاري تسجيل الطلب..." : "تأكيد طلب البيع والمتابعة"}
+                    {loading ? text("جاري تسجيل الطلب...", "Creating order...") : text("تأكيد طلب البيع والمتابعة", "Confirm sell order")}
                   </button>
                 </form>
               </div>
@@ -360,22 +306,22 @@ export default function SellPage() {
             {/* Sidebar Rate & Guarantee */}
             <div className="space-y-6">
               <div className="p-6 rounded-3xl bg-[#0E0E12] border border-emerald-500/30 shadow-2xl space-y-4">
-                <span className="text-xs text-gray-400 font-medium">سعر بيع USDT الحالي</span>
+                <span className="text-xs text-gray-400 font-medium">{text("سعر بيع USDT الحالي", "Current USDT sell rate")}</span>
                 <div className="text-4xl font-black text-emerald-400 font-mono">
                   {exchangeRate} <span className="text-sm text-gray-300">EGP / USDT</span>
                 </div>
                 <div className="p-3 rounded-xl bg-white/5 text-[11px] text-gray-300 space-y-1">
-                  <p>• الحد الأدنى للطلب: {minOrder} USDT</p>
-                  <p>• الحد الأقصى للطلب: {maxOrder} USDT</p>
-                  <p>• الرسوم: 0% مجاناً بالكامل</p>
+                  <p>• {text("الحد الأدنى للطلب:", "Minimum order:")} {minOrder} USDT</p>
+                  <p>• {text("الحد الأقصى للطلب:", "Maximum order:")} {maxOrder} USDT</p>
+                  <p>• {text("الرسوم: 0% مجاناً بالكامل", "Fee: 0%")}</p>
                 </div>
               </div>
 
               <div className="p-6 rounded-3xl bg-[#0E0E12] border border-white/5 space-y-3 text-xs text-gray-400">
-                <h4 className="font-bold text-white">إجراءات الأمان والتحقق من المعاملة</h4>
-                <p>• يتم فحص هاش المعاملة (TXID) تلقائياً على شبكة البلوك تشين للتأكد من وصول العملات.</p>
-                <p>• فور تأكيد وصول الـ USDT يتم تحويل الجنيه المصري إلى محفظتك في أقل من 10 دقائق.</p>
-                <p>• لا تشارك أي كلمات سر أو رموز OTP مع أي طرف يدعي أنه من المنصة.</p>
+                <h4 className="font-bold text-white">{text("إجراءات الأمان والتحقق من المعاملة", "Security and verification")}</h4>
+                <p>• {text("يرجى رفع إثبات التحويل بعد إرسال USDT عبر شبكة BSC.", "Upload your transfer proof after sending USDT on BSC.")}</p>
+                <p>• {text("يتم فحص الإيداع مصرفيًا قبل إرسال الجنيه إلى حسابك.", "Your deposit is bank-verified before EGP is sent to your account.")}</p>
+                <p>• {text("لا تشارك كلمات السر أو رموز OTP مع أي طرف.", "Never share passwords or OTP codes with anyone.")}</p>
               </div>
             </div>
           </div>

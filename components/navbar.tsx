@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
-import { Menu, X, Globe, LayoutDashboard, UserCheck } from "lucide-react";
+import { Globe, LayoutDashboard, UserCheck } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { NotificationBell } from "@/components/notification-bell";
 
 export function Navbar() {
   const { data: session } = useSession();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t, locale, setLocale } = useTranslation();
 
   const toggleLanguage = () => {
@@ -87,7 +85,7 @@ export function Navbar() {
                   className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs font-bold border border-amber-500/30 flex items-center gap-1.5 transition-all"
                 >
                   <LayoutDashboard className="w-3.5 h-3.5" />
-                  <span>لوحة المستخدم</span>
+                  <span>{locale === "ar" ? "لوحة المستخدم" : "Dashboard"}</span>
                 </Link>
 
                 {isStaff && (
@@ -96,7 +94,7 @@ export function Navbar() {
                     className="px-4 py-2 bg-gradient-to-r from-[#F5B942] to-[#E6A430] text-[#0A0A0A] rounded-xl font-bold shadow-[0_0_20px_rgba(245,185,66,0.35)] hover:shadow-[0_0_30px_rgba(245,185,66,0.6)] transition-all text-xs flex items-center gap-1.5"
                   >
                     <UserCheck className="w-3.5 h-3.5" />
-                    <span>لوحة الإدارة</span>
+                    <span>{locale === "ar" ? "لوحة الإدارة" : "Admin"}</span>
                   </Link>
                 )}
 
@@ -139,85 +137,51 @@ export function Navbar() {
               <span>{locale === "ar" ? "EN" : "AR"}</span>
             </button>
 
-            <button
-              className="text-[#F5B942] p-1.5 liquid-pill rounded-xl"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden pb-4 pt-2 space-y-2 bg-[#0C0C12]/95 backdrop-blur-2xl border-b border-white/10 rounded-b-2xl shadow-2xl px-2">
-            <Link
-              href="/buy"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-4 py-2.5 text-gray-300 hover:text-[#F5B942] hover:bg-white/[0.06] rounded-xl transition-all"
-            >
-              {t("buy")}
-            </Link>
-            <Link
-              href="/sell"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-4 py-2.5 text-gray-300 hover:text-[#F5B942] hover:bg-white/[0.06] rounded-xl transition-all"
-            >
-              {t("sell")}
-            </Link>
-            <Link
-              href="/track"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-4 py-2.5 text-gray-300 hover:text-[#F5B942] hover:bg-white/[0.06] rounded-xl transition-all"
-            >
-              {t("track")}
-            </Link>
-            <Link
-              href="/reviews"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-4 py-2.5 text-gray-300 hover:text-[#F5B942] hover:bg-white/[0.06] rounded-xl transition-all"
-            >
-              {t("reviews")}
-            </Link>
+        <div className="md:hidden border-t border-white/10 py-2">
+          <div className="grid grid-cols-4 gap-1">
+            {[
+              { label: t("buy"), href: "/buy" },
+              { label: t("sell"), href: "/sell" },
+              { label: t("track"), href: "/track" },
+              { label: t("reviews"), href: "/reviews" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-center px-1 py-2 text-xs font-semibold text-gray-300 hover:text-[#F5B942] hover:bg-white/[0.06] rounded-lg"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <div className="flex items-center justify-center gap-2 pt-1">
             {session?.user ? (
-              <div className="pt-2 border-t border-white/10 space-y-2">
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-4 py-2.5 text-amber-400 font-bold hover:bg-amber-500/10 rounded-xl transition-all"
-                >
-                  لوحة تحكم المستخدم
+              <>
+                <Link href="/dashboard" className="px-3 py-1.5 text-xs text-amber-400 font-bold rounded-lg hover:bg-amber-500/10">
+                  {t("dashboard")}
                 </Link>
                 {isStaff && (
-                  <Link
-                    href="/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2.5 bg-gradient-to-r from-[#F5B942] to-[#E6A430] text-[#0A0A0A] rounded-xl font-bold text-center shadow-lg transition-all text-xs"
-                  >
-                    لوحة الإدارة (Admin Panel)
+                  <Link href="/admin" className="px-3 py-1.5 text-xs text-amber-300 font-bold rounded-lg hover:bg-amber-500/10">
+                    {locale === "ar" ? "الإدارة" : "Admin"}
                   </Link>
                 )}
                 <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    signOut({ callbackUrl: "/auth/login" });
-                  }}
-                  className="w-full px-4 py-2.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl transition-colors font-medium border border-red-500/30 text-xs"
+                  onClick={() => signOut({ callbackUrl: "/auth/login" })}
+                  className="px-3 py-1.5 text-xs text-red-400 rounded-lg hover:bg-red-500/10"
                 >
                   {t("logout")}
                 </button>
-              </div>
+              </>
             ) : (
-              <Link
-                href="/auth/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-2.5 bg-gradient-to-r from-[#F5B942] to-[#E6A430] text-[#0A0A0A] rounded-xl font-bold text-center shadow-lg transition-all"
-              >
+              <Link href="/auth/login" className="px-3 py-1.5 text-xs font-bold text-[#0A0A0A] bg-gradient-to-r from-[#F5B942] to-[#E6A430] rounded-lg">
                 {t("login")}
               </Link>
             )}
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );

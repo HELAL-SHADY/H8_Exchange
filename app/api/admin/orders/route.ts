@@ -29,7 +29,11 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20")));
 
     const where: any = {};
-    if (status && status !== "ALL") where.status = status;
+    if (status && status !== "ALL") {
+      where.status = status === "UNDER_VERIFICATION"
+        ? { in: ["UNDER_VERIFICATION", "PENDING_REVIEW", "APPROVED"] }
+        : status;
+    }
     if (type && type !== "ALL") where.type = type;
     if (search) {
       where.OR = [
@@ -39,7 +43,6 @@ export async function GET(request: NextRequest) {
         { phone: { contains: search, mode: "insensitive" } },
         { binanceUid: { contains: search, mode: "insensitive" } },
         { walletNumber: { contains: search, mode: "insensitive" } },
-        { txHash: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -70,9 +73,24 @@ export async function GET(request: NextRequest) {
       }),
       prisma.order.count({ where }),
     ]);
+    const visibleOrders = orders.map(({ txHash, ...order }) => ({
+      ...order,
+      status: ["PENDING_REVIEW", "APPROVED"].includes(order.status)
+        ? "UNDER_VERIFICATION"
+        : order.status,
+      statusHistory: order.statusHistory.map((history) => ({
+        ...history,
+        fromStatus: ["PENDING_REVIEW", "APPROVED"].includes(history.fromStatus || "")
+          ? "UNDER_VERIFICATION"
+          : history.fromStatus,
+        toStatus: ["PENDING_REVIEW", "APPROVED"].includes(history.toStatus)
+          ? "UNDER_VERIFICATION"
+          : history.toStatus,
+      })),
+    }));
 
     return NextResponse.json({
-      orders,
+      orders: visibleOrders,
       pagination: {
         page,
         limit,

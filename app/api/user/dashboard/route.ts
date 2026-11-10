@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       prisma.order.count({
         where: {
           userId,
-          status: { in: ["PENDING_PAYMENT", "PENDING_REVIEW", "UNDER_VERIFICATION"] },
+          status: { in: ["PENDING_PAYMENT", "PENDING_REVIEW", "UNDER_VERIFICATION", "APPROVED"] },
         },
       }),
       prisma.order.count({ where: { userId, status: "COMPLETED" } }),

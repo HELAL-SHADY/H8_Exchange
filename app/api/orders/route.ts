@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
     };
 
     if (status && status !== "ALL") {
-      where.status = status;
+      where.status = status === "UNDER_VERIFICATION"
+        ? { in: ["UNDER_VERIFICATION", "PENDING_REVIEW", "APPROVED"] }
+        : status;
     }
 
     if (type && type !== "ALL") {
@@ -36,7 +38,6 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { id: { contains: search, mode: "insensitive" } },
         { orderNumber: { contains: search, mode: "insensitive" } },
-        { txHash: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -57,9 +58,24 @@ export async function GET(request: NextRequest) {
       }),
       prisma.order.count({ where }),
     ]);
+    const visibleOrders = orders.map(({ txHash, ...order }) => ({
+      ...order,
+      status: ["PENDING_REVIEW", "APPROVED"].includes(order.status)
+        ? "UNDER_VERIFICATION"
+        : order.status,
+      statusHistory: order.statusHistory.map((history) => ({
+        ...history,
+        fromStatus: ["PENDING_REVIEW", "APPROVED"].includes(history.fromStatus || "")
+          ? "UNDER_VERIFICATION"
+          : history.fromStatus,
+        toStatus: ["PENDING_REVIEW", "APPROVED"].includes(history.toStatus)
+          ? "UNDER_VERIFICATION"
+          : history.toStatus,
+      })),
+    }));
 
     return NextResponse.json({
-      orders,
+      orders: visibleOrders,
       pagination: {
         page,
         limit,
@@ -95,7 +111,6 @@ export async function POST(request: NextRequest) {
       paymentMethod,
       receiveMethod,
       network,
-      txHash,
     } = body;
 
     if (!type || !amount) {
@@ -107,6 +122,10 @@ export async function POST(request: NextRequest) {
 
     // Check system maintenance & trading status
     const siteSettings = await prisma.siteSettings.findFirst();
+    if (type !== "BUY" && type !== "SELL") {
+      return NextResponse.json({ error: "نوع المعاملة غير صالح" }, { status: 400 });
+    }
+
     if (siteSettings) {
       if (type === "BUY" && !siteSettings.buyEnabled) {
         return NextResponse.json(
@@ -119,6 +138,46 @@ export async function POST(request: NextRequest) {
           { error: "عمليات البيع متوقفة حالياً للصيانة، وسوف تتاح قريباً." },
           { status: 503 }
         );
+      }
+    }
+
+    if (type === "BUY") {
+      if (!["VODAFONE_CASH", "INSTAPAY"].includes(paymentMethod)) {
+        return NextResponse.json({ error: "طريقة الدفع غير مدعومة" }, { status: 400 });
+      }
+      if (
+        (paymentMethod === "VODAFONE_CASH" && !siteSettings?.vodafoneEnabled) ||
+        (paymentMethod === "INSTAPAY" && !siteSettings?.instapayEnabled)
+      ) {
+        return NextResponse.json({ error: "طريقة الدفع متوقفة حاليًا" }, { status: 503 });
+      }
+      if (!["BINANCE_PAY", "CRYPTO_WALLET"].includes(receiveMethod)) {
+        return NextResponse.json({ error: "طريقة الاستلام غير مدعومة" }, { status: 400 });
+      }
+      if (receiveMethod === "BINANCE_PAY" && !siteSettings?.binanceEnabled) {
+        return NextResponse.json({ error: "استلام Binance متوقف حاليًا" }, { status: 503 });
+      }
+      if (receiveMethod === "CRYPTO_WALLET" && network !== "BEP20") {
+        return NextResponse.json({ error: "شبكة العنوان المدعومة هي BSC فقط" }, { status: 400 });
+      }
+      if (receiveMethod === "CRYPTO_WALLET" && !siteSettings?.bep20Enabled) {
+        return NextResponse.json({ error: "شبكة BSC متوقفة حاليًا" }, { status: 503 });
+      }
+    } else {
+      if (paymentMethod !== "BEP20" || network !== "BEP20") {
+        return NextResponse.json({ error: "الإيداع متاح عبر شبكة BSC فقط" }, { status: 400 });
+      }
+      if (!siteSettings?.bep20Enabled || !siteSettings.usdtBep20Address?.trim()) {
+        return NextResponse.json({ error: "الإيداع عبر BSC غير متاح حاليًا" }, { status: 503 });
+      }
+      if (!["VODAFONE_CASH", "INSTAPAY"].includes(receiveMethod)) {
+        return NextResponse.json({ error: "طريقة استلام الجنيه غير مدعومة" }, { status: 400 });
+      }
+      if (
+        (receiveMethod === "VODAFONE_CASH" && !siteSettings.vodafoneEnabled) ||
+        (receiveMethod === "INSTAPAY" && !siteSettings.instapayEnabled)
+      ) {
+        return NextResponse.json({ error: "طريقة الاستلام متوقفة حاليًا" }, { status: 503 });
       }
     }
 
@@ -178,8 +237,7 @@ export async function POST(request: NextRequest) {
 
     const orderNumber = generateOrderNumber(type);
 
-    // Initial status: If proof or txHash is already uploaded, PENDING_REVIEW; otherwise PENDING_PAYMENT
-    const initialStatus = (proofImageUrl || txHash) ? "PENDING_REVIEW" : "PENDING_PAYMENT";
+    const initialStatus = proofImageUrl || proofImageId ? "UNDER_VERIFICATION" : "PENDING_PAYMENT";
 
     // Create Order with Snapshot and Status History in transaction
     const newOrder = await prisma.$transaction(async (tx) => {
@@ -202,7 +260,6 @@ export async function POST(request: NextRequest) {
           paymentMethod: paymentMethod || null,
           receiveMethod: receiveMethod || null,
           network: network || null,
-          txHash: txHash || null,
           status: initialStatus,
         },
       });
@@ -248,7 +305,8 @@ export async function POST(request: NextRequest) {
       console.warn("Telegram alert failed silently:", e);
     }
 
-    return NextResponse.json(newOrder, { status: 201 });
+    const { txHash, ...visibleOrder } = newOrder;
+    return NextResponse.json(visibleOrder, { status: 201 });
   } catch (error: any) {
     console.error("Error creating order:", error);
     return NextResponse.json(

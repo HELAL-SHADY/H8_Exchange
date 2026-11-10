@@ -120,7 +120,7 @@ export function NotificationBell() {
       case "ORDER_COMPLETED":
         return <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />;
       case "ORDER_APPROVED":
-        return <CheckCircle2 className="w-5 h-5 text-[#F5B942] shrink-0 drop-shadow-[0_0_8px_rgba(245,185,66,0.5)]" />;
+        return <Clock className="w-5 h-5 text-[#F5B942] shrink-0 drop-shadow-[0_0_8px_rgba(245,185,66,0.5)]" />;
       case "ORDER_REJECTED":
         return <XCircle className="w-5 h-5 text-rose-500 shrink-0 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]" />;
       default:

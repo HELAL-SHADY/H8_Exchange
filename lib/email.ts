@@ -67,8 +67,6 @@ function formatMethodLabel(method?: string | null): string {
       return "انستاباي (InstaPay)";
     case "BINANCE_PAY":
       return "بينانس باي (Binance Pay)";
-    case "BYBIT_PAY":
-      return "باي بيت باي (Bybit Pay)";
     default:
       return method;
   }

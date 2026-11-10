@@ -14,14 +14,13 @@ const methodLabels: Record<string, string> = {
   VODAFONE_CASH: "Vodafone Cash",
   INSTAPAY: "InstaPay",
   BINANCE_PAY: "Binance Pay",
-  BYBIT_PAY: "Bybit Pay",
 };
 
 const statusLabels: Record<string, string> = {
   PENDING_PAYMENT: "في انتظار الدفع",
-  PENDING_REVIEW: "قيد المراجعة",
-  UNDER_VERIFICATION: "التحقق جاري",
-  APPROVED: "معتمد",
+  PENDING_REVIEW: "الفحص المصرفي",
+  UNDER_VERIFICATION: "الفحص المصرفي",
+  APPROVED: "الفحص المصرفي",
   REJECTED: "مرفوض",
   COMPLETED: "مكتمل",
 };

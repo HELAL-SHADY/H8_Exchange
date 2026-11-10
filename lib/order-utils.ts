@@ -19,26 +19,3 @@ export function roundToPrecision(val: number, decimals: number = 2): number {
   const factor = Math.pow(10, decimals);
   return Math.round((val + Number.EPSILON) * factor) / factor;
 }
-
-/**
- * Blockchain explorer URL generator based on network and txHash
- */
-export function getExplorerUrl(network?: string | null, txHash?: string | null): string | null {
-  if (!txHash) return null;
-  const hash = txHash.trim();
-  const net = (network || "TRC20").toUpperCase();
-
-  if (net.includes("TRC") || net.includes("TRON")) {
-    return `https://tronscan.org/#/transaction/${hash}`;
-  }
-  if (net.includes("BEP") || net.includes("BSC") || net.includes("BINANCE")) {
-    return `https://bscscan.com/tx/${hash}`;
-  }
-  if (net.includes("ERC") || net.includes("ETH")) {
-    return `https://etherscan.io/tx/${hash}`;
-  }
-  if (net.includes("POLYGON") || net.includes("MATIC")) {
-    return `https://polygonscan.com/tx/${hash}`;
-  }
-  return `https://tronscan.org/#/transaction/${hash}`;
-}

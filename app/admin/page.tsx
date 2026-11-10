@@ -99,11 +99,11 @@ export default function AdminDashboardPage() {
       {/* Operational Order Flow Status */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Link
-          href="/admin/orders?status=PENDING_REVIEW"
+          href="/admin/orders?status=PENDING_PAYMENT"
           className="p-5 rounded-2xl bg-[#0E0E12] border border-amber-500/20 hover:border-amber-500/50 transition-all block group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">بانتظار المراجعة</span>
+            <span className="text-xs text-gray-400">بانتظار الدفع</span>
             <Clock className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl font-black text-amber-400 mt-2">{stats.pendingOrders}</div>
@@ -113,16 +113,16 @@ export default function AdminDashboardPage() {
         </Link>
 
         <Link
-          href="/admin/orders?status=APPROVED"
+          href="/admin/orders?status=UNDER_VERIFICATION"
           className="p-5 rounded-2xl bg-[#0E0E12] border border-blue-500/20 hover:border-blue-500/50 transition-all block group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">معتمدة وجاري التحويل</span>
+            <span className="text-xs text-gray-400">الفحص المصرفي</span>
             <TrendingUp className="w-4 h-4 text-blue-400" />
           </div>
-          <div className="text-2xl font-black text-blue-400 mt-2">{stats.approvedOrders}</div>
+          <div className="text-2xl font-black text-blue-400 mt-2">{stats.underVerificationOrders}</div>
           <span className="text-[10px] text-blue-400/80 mt-1 block group-hover:underline">
-            بانتظار إرسال العملة/الكاش ←
+            مراجعة إثبات الدفع ←
           </span>
         </Link>
 

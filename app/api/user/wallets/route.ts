@@ -11,7 +11,13 @@ export async function GET(request: NextRequest) {
     }
 
     const wallets = await prisma.userWallet.findMany({
-      where: { userId: session.user.id },
+      where: {
+        userId: session.user.id,
+        OR: [
+          { type: { in: ["VODAFONE_CASH", "INSTAPAY", "BINANCE_PAY"] } },
+          { type: "CRYPTO_WALLET", network: "BEP20" },
+        ],
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -35,6 +41,12 @@ export async function POST(request: NextRequest) {
         { error: "الاسم التعريفي ونوع المحفظة والعنوان مطلوبين" },
         { status: 400 }
       );
+    }
+    if (!["VODAFONE_CASH", "INSTAPAY", "BINANCE_PAY", "CRYPTO_WALLET"].includes(type)) {
+      return NextResponse.json({ error: "نوع المحفظة غير مدعوم" }, { status: 400 });
+    }
+    if (type === "CRYPTO_WALLET" && network !== "BEP20") {
+      return NextResponse.json({ error: "شبكة المحافظ المدعومة هي BSC فقط" }, { status: 400 });
     }
 
     if (isDefault) {

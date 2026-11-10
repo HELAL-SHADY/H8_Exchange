@@ -77,9 +77,7 @@ export const translations = {
     receiveMethod: "طريقة استلام USDT",
     receiveMethodSell: "طريقة استلام EGP",
     binanceUidLabel: "Binance UID الخاص بك (لاستقبال USDT)",
-    bybitUidLabel: "Bybit Pay ID الخاص بك (لاستقبال USDT)",
     binanceUidLabelSell: "Binance UID الخاص بك",
-    bybitUidLabelSell: "Bybit Pay ID الخاص بك",
     walletNumberLabel: "رقم محفظة Vodafone Cash المرسل منها",
     instapayNumberLabel: "رقم الحساب / الهاتف المرسل منه InstaPay",
     receivingWalletLabel: "محفظة الاستقبال (Vodafone Cash)",
@@ -104,7 +102,7 @@ export const translations = {
       "سيتم إرسال USDT إلى حسابك"
     ],
     sellInstructions: [
-      "أرسل USDT إلى Binance UID أو Bybit Pay ID المعروض",
+      "أرسل USDT إلى العنوان أو الحساب المعروض",
       "خذ لقطة شاشة للتحويل",
       "سيتم التحقق من العملية",
       "ستستقبل EGP في محفظتك"
@@ -112,7 +110,7 @@ export const translations = {
     currentPrice: "السعر الحالي",
     importantNotes: "ملاحظات مهمة",
     buyNotes: [
-      "تأكد من صحة بيانات الحساب المُراد الاستلام عليه (Binance / Bybit)",
+      "تأكد من صحة بيانات الحساب أو المحفظة المُراد الاستلام عليها",
       "احتفظ بلقطة شاشة الحوالة",
       "سيتم التحقق من الطلب خلال 30 دقيقة",
       "تواصل معنا عبر Telegram للدعم"
@@ -139,9 +137,8 @@ export const translations = {
     orderRejected: "تم رفض الطلب",
     orderRejectedDetail: "يرجى تقديم طلب جديد",
     status_PENDING_PAYMENT: "في انتظار الدفع",
-    status_PENDING_REVIEW: "قيد المراجعة",
-    status_UNDER_VERIFICATION: "التحقق جاري",
-    status_APPROVED: "موافق عليه",
+    status_PENDING_REVIEW: "الفحص المصرفي",
+    status_UNDER_VERIFICATION: "الفحص المصرفي",
     status_REJECTED: "مرفوض",
     status_COMPLETED: "مكتمل",
     reviewTitle: "تقييم الخدمة",
@@ -258,9 +255,7 @@ export const translations = {
     receiveMethod: "USDT Receive Method",
     receiveMethodSell: "EGP Receive Method",
     binanceUidLabel: "Your Binance UID (to receive USDT)",
-    bybitUidLabel: "Your Bybit Pay ID (to receive USDT)",
     binanceUidLabelSell: "Your Binance UID",
-    bybitUidLabelSell: "Your Bybit Pay ID",
     walletNumberLabel: "Vodafone Cash wallet number sent from",
     instapayNumberLabel: "Account / Phone sent from on InstaPay",
     receivingWalletLabel: "Receiving wallet (Vodafone Cash)",
@@ -285,7 +280,7 @@ export const translations = {
       "USDT will be sent to your wallet"
     ],
     sellInstructions: [
-      "Send USDT to the displayed Binance UID or Bybit Pay ID",
+      "Send USDT to the displayed address or account",
       "Take a screenshot of the transfer",
       "The transaction will be verified",
       "You will receive EGP in your wallet"
@@ -293,7 +288,7 @@ export const translations = {
     currentPrice: "Current Price",
     importantNotes: "Important Notes",
     buyNotes: [
-      "Make sure the receiving account details are correct (Binance / Bybit)",
+      "Make sure the receiving account or wallet details are correct",
       "Keep a screenshot of the transfer",
       "The order will be verified within 30 minutes",
       "Contact us via Telegram for support"
@@ -320,9 +315,8 @@ export const translations = {
     orderRejected: "Order Rejected",
     orderRejectedDetail: "Please submit a new order",
     status_PENDING_PAYMENT: "Pending Payment",
-    status_PENDING_REVIEW: "Pending Review",
-    status_UNDER_VERIFICATION: "Under Verification",
-    status_APPROVED: "Approved",
+    status_PENDING_REVIEW: "Bank Verification",
+    status_UNDER_VERIFICATION: "Bank Verification",
     status_REJECTED: "Rejected",
     status_COMPLETED: "Completed",
     reviewTitle: "Service Review",

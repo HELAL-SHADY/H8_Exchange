@@ -14,9 +14,11 @@ import {
   AlertCircle,
   Download,
 } from "lucide-react";
-import { getExplorerUrl } from "@/lib/order-utils";
+import { useTranslation } from "@/lib/i18n";
 
 export default function AdminOrdersPage() {
+  const { locale } = useTranslation();
+  const text = (ar: string, en: string) => locale === "ar" ? ar : en;
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get("status") || "ALL";
 
@@ -33,7 +35,6 @@ export default function AdminOrdersPage() {
   const [modalActionLoading, setModalActionLoading] = useState(false);
   const [adminNote, setAdminNote] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
-  const [txHashInput, setTxHashInput] = useState("");
 
   const fetchOrders = () => {
     setLoading(true);
@@ -62,13 +63,12 @@ export default function AdminOrdersPage() {
     setSelectedOrder(order);
     setAdminNote(order.adminNote || "");
     setRejectionReason(order.rejectionReason || "");
-    setTxHashInput(order.txHash || "");
   };
 
-  const handleAction = async (action: "APPROVE" | "COMPLETE" | "REJECT" | "VERIFY") => {
+  const handleAction = async (action: "COMPLETE" | "REJECT") => {
     if (!selectedOrder) return;
     if (action === "REJECT" && !rejectionReason.trim()) {
-      alert("يرجى كتابة سبب الرفض لتوضيحه للمستخدم");
+      alert(text("يرجى كتابة سبب الرفض لتوضيحه للمستخدم", "Enter a rejection reason for the customer"));
       return;
     }
 
@@ -81,7 +81,6 @@ export default function AdminOrdersPage() {
           action,
           adminNote,
           rejectionReason,
-          txHash: txHashInput || undefined,
         }),
       });
 
@@ -103,9 +102,9 @@ export default function AdminOrdersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white">إدارة وتدقيق طلبات التداول</h1>
+          <h1 className="text-2xl font-black text-white">{text("إدارة وتدقيق طلبات التداول", "Trading orders")}</h1>
           <p className="text-xs text-gray-400 mt-1">
-            مراجعة إيصالات الدفع، التحقق من مبالغ المعاملات، واعتماد صرف USDT والجنيه المصري.
+            {text("مراجعة إثباتات الدفع والتحقق المصرفي ثم إكمال الطلب أو رفضه.", "Review payment proofs, verify transactions, then complete or reject orders.")}
           </p>
         </div>
       </div>
@@ -119,7 +118,7 @@ export default function AdminOrdersPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث برقم الطلب، اسم العميل، الهاتف، أو الـ TXID..."
+              placeholder={text("ابحث برقم الطلب، اسم العميل أو الهاتف...", "Search by order number, customer name, or phone...")}
               className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-gray-500 text-xs focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -133,13 +132,12 @@ export default function AdminOrdersPage() {
               }}
               className="px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-amber-500"
             >
-              <option value="ALL">كل الحالات</option>
-              <option value="PENDING_REVIEW">بانتظار المراجعة (Pending Review)</option>
-              <option value="UNDER_VERIFICATION">تحت الفحص المصرفي</option>
-              <option value="APPROVED">معتمد (Approved)</option>
-              <option value="COMPLETED">مكتمل (Completed)</option>
-              <option value="REJECTED">مرفوض (Rejected)</option>
-              <option value="CANCELLED">ملغي (Cancelled)</option>
+              <option value="ALL">{text("كل الحالات", "All statuses")}</option>
+              <option value="PENDING_PAYMENT">{text("بانتظار الدفع", "Pending payment")}</option>
+              <option value="UNDER_VERIFICATION">{text("الفحص المصرفي", "Bank verification")}</option>
+              <option value="COMPLETED">{text("مكتمل", "Completed")}</option>
+              <option value="REJECTED">{text("مرفوض", "Rejected")}</option>
+              <option value="CANCELLED">{text("ملغي", "Cancelled")}</option>
             </select>
 
             <select
@@ -150,9 +148,9 @@ export default function AdminOrdersPage() {
               }}
               className="px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-amber-500"
             >
-              <option value="ALL">كل الأنواع</option>
-              <option value="BUY">شراء USDT</option>
-              <option value="SELL">بيع USDT</option>
+              <option value="ALL">{text("كل الأنواع", "All types")}</option>
+              <option value="BUY">{text("شراء USDT", "Buy USDT")}</option>
+              <option value="SELL">{text("بيع USDT", "Sell USDT")}</option>
             </select>
 
             <button
@@ -162,7 +160,7 @@ export default function AdminOrdersPage() {
               }}
               className="px-4 py-2.5 rounded-xl bg-amber-500 text-black font-bold text-xs hover:brightness-110"
             >
-              بحث وتصفية
+              {text("بحث وتصفية", "Search and filter")}
             </button>
           </div>
         </div>
@@ -173,26 +171,26 @@ export default function AdminOrdersPage() {
         {loading ? (
           <div className="p-12 text-center">
             <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-xs text-gray-400 mt-3">جاري تحميل سجل الطلبات...</p>
+            <p className="text-xs text-gray-400 mt-3">{text("جاري تحميل سجل الطلبات...", "Loading orders...")}</p>
           </div>
         ) : orders.length === 0 ? (
           <div className="p-12 text-center text-gray-400 text-sm">
-            لا توجد طلبات مسجلة بهذه المعايير.
+            {text("لا توجد طلبات مسجلة بهذه المعايير.", "No orders match these filters.")}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-right text-xs">
               <thead className="bg-[#14141A] text-gray-400 border-b border-white/5">
                 <tr>
-                  <th className="py-3 px-4 font-semibold">رقم الطلب</th>
-                  <th className="py-3 px-4 font-semibold">العميل</th>
-                  <th className="py-3 px-4 font-semibold">النوع</th>
-                  <th className="py-3 px-4 font-semibold">مبلغ USDT</th>
-                  <th className="py-3 px-4 font-semibold">المبلغ (ج.م)</th>
-                  <th className="py-3 px-4 font-semibold">وسيلة الدفع / الوجهة</th>
-                  <th className="py-3 px-4 font-semibold">الحالة</th>
-                  <th className="py-3 px-4 font-semibold">التاريخ</th>
-                  <th className="py-3 px-4 font-semibold text-center">الإجراء والتدقيق</th>
+                  <th className="py-3 px-4 font-semibold">{text("رقم الطلب", "Order number")}</th>
+                  <th className="py-3 px-4 font-semibold">{text("العميل", "Customer")}</th>
+                  <th className="py-3 px-4 font-semibold">{text("النوع", "Type")}</th>
+                  <th className="py-3 px-4 font-semibold">USDT</th>
+                  <th className="py-3 px-4 font-semibold">{text("المبلغ (EGP)", "Amount (EGP)")}</th>
+                  <th className="py-3 px-4 font-semibold">{text("وسيلة الدفع / الوجهة", "Payment / destination")}</th>
+                  <th className="py-3 px-4 font-semibold">{text("الحالة", "Status")}</th>
+                  <th className="py-3 px-4 font-semibold">{text("التاريخ", "Date")}</th>
+                  <th className="py-3 px-4 font-semibold text-center">{text("الإجراء", "Action")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -215,14 +213,14 @@ export default function AdminOrdersPage() {
                               : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                           }`}
                         >
-                          {isBuy ? "شراء USDT" : "بيع USDT"}
+                          {isBuy ? text("شراء USDT", "Buy USDT") : text("بيع USDT", "Sell USDT")}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-mono font-bold text-white">
                         {ord.usdtAmount || ord.amount} USDT
                       </td>
                       <td className="py-3.5 px-4 font-mono text-emerald-400 font-bold">
-                        {ord.egpAmount ? `${ord.egpAmount} ج.م` : "-"}
+                        {ord.egpAmount ? `${ord.egpAmount} EGP` : "-"}
                       </td>
                       <td className="py-3.5 px-4 text-gray-300">
                         <div>{ord.paymentMethod || ord.receiveMethod || "-"}</div>
@@ -237,16 +235,26 @@ export default function AdminOrdersPage() {
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
                               : ord.status === "REJECTED" || ord.status === "CANCELLED"
                               ? "bg-red-500/10 text-red-400 border border-red-500/30"
-                              : ord.status === "APPROVED"
-                              ? "bg-blue-500/10 text-blue-400 border border-blue-500/30"
                               : "bg-amber-500/10 text-amber-400 border border-amber-500/30"
                           }`}
                         >
-                          <span>{ord.status}</span>
+                          <span>{ord.status === "PENDING_REVIEW" || ord.status === "APPROVED"
+                            ? text("الفحص المصرفي", "Bank verification")
+                            : ord.status === "UNDER_VERIFICATION"
+                            ? text("الفحص المصرفي", "Bank verification")
+                            : ord.status === "PENDING_PAYMENT"
+                            ? text("بانتظار الدفع", "Pending payment")
+                            : ord.status === "COMPLETED"
+                            ? text("مكتمل", "Completed")
+                            : ord.status === "REJECTED"
+                            ? text("مرفوض", "Rejected")
+                            : ord.status === "CANCELLED"
+                            ? text("ملغي", "Cancelled")
+                            : ord.status}</span>
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-gray-400 font-mono text-[11px]">
-                        {new Date(ord.createdAt).toLocaleDateString("ar-EG")}
+                        {new Date(ord.createdAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")}
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <button
@@ -254,7 +262,7 @@ export default function AdminOrdersPage() {
                           className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 font-bold inline-flex items-center gap-1 border border-amber-500/20"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          <span>فحص واعتماد</span>
+                          <span>{text("مراجعة الطلب", "Review order")}</span>
                         </button>
                       </td>
                     </tr>
@@ -273,7 +281,7 @@ export default function AdminOrdersPage() {
             <div className="flex items-center justify-between border-b border-white/5 pb-4">
               <div>
                 <span className="text-[10px] text-gray-400 uppercase tracking-wider font-mono">
-                  Order Review & Verification
+                          {text("مراجعة الطلب والفحص المصرفي", "Order review and bank verification")}
                 </span>
                 <h3 className="text-lg font-bold text-white font-mono flex items-center gap-2">
                   <span>{selectedOrder.orderNumber || selectedOrder.id}</span>
@@ -286,32 +294,32 @@ export default function AdminOrdersPage() {
                 onClick={() => setSelectedOrder(null)}
                 className="text-gray-400 hover:text-white text-sm"
               >
-                ✕ إغلاق
+                ✕ {text("إغلاق", "Close")}
               </button>
             </div>
 
             {/* Financial Details Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-black/50 border border-white/5 text-xs">
               <div>
-                <span className="text-gray-400">مبلغ USDT:</span>
+                <span className="text-gray-400">USDT:</span>
                 <p className="font-bold text-amber-400 text-sm font-mono mt-0.5">
                   {selectedOrder.usdtAmount || selectedOrder.amount} USDT
                 </p>
               </div>
               <div>
-                <span className="text-gray-400">المبلغ بالجنيه:</span>
+                <span className="text-gray-400">{text("المبلغ بالجنيه:", "Amount in EGP:")}</span>
                 <p className="font-bold text-emerald-400 text-sm font-mono mt-0.5">
                   {selectedOrder.egpAmount || "-"} ج.م
                 </p>
               </div>
               <div>
-                <span className="text-gray-400">سعر الصرف المعتمد:</span>
+                <span className="text-gray-400">{text("سعر الصرف:", "Exchange rate:")}</span>
                 <p className="font-bold text-white text-sm font-mono mt-0.5">
                   {selectedOrder.rateSnapshot || "-"} EGP
                 </p>
               </div>
               <div>
-                <span className="text-gray-400">الحالة الحالية:</span>
+                <span className="text-gray-400">{text("الحالة الحالية:", "Current status:")}</span>
                 <p className="font-bold text-amber-300 text-sm mt-0.5">
                   {selectedOrder.status}
                 </p>
@@ -321,11 +329,11 @@ export default function AdminOrdersPage() {
             {/* User & Destination Information */}
             <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-gray-400">اسم صاحب الطلب:</span>
+                <span className="text-gray-400">{text("اسم صاحب الطلب:", "Customer name:")}</span>
                 <span className="text-white font-bold">{selectedOrder.fullName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">رقم الهاتف:</span>
+                <span className="text-gray-400">{text("رقم الهاتف:", "Phone:")}</span>
                 <span className="text-white font-mono">{selectedOrder.phone}</span>
               </div>
               {selectedOrder.binanceUid && (
@@ -336,13 +344,13 @@ export default function AdminOrdersPage() {
               )}
               {selectedOrder.walletNumber && (
                 <div className="flex justify-between">
-                  <span className="text-gray-400">عنوان المحفظة / فودافون كاش:</span>
+                  <span className="text-gray-400">{text("عنوان المحفظة / رقم الدفع:", "Wallet / payment address:")}</span>
                   <span className="text-amber-400 font-mono font-bold break-all">{selectedOrder.walletNumber}</span>
                 </div>
               )}
               {selectedOrder.network && (
                 <div className="flex justify-between">
-                  <span className="text-gray-400">الشبكة:</span>
+                  <span className="text-gray-400">{text("الشبكة:", "Network:")}</span>
                   <span className="text-white font-bold">{selectedOrder.network}</span>
                 </div>
               )}
@@ -350,7 +358,7 @@ export default function AdminOrdersPage() {
 
             {/* Proof of Payment Preview */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-gray-300 block">إثبات الدفع والتحويل:</span>
+              <span className="text-xs font-bold text-gray-300 block">{text("إثبات الدفع والتحويل:", "Payment proof:")}</span>
               {selectedOrder.proofImageUrl ? (
                 <div className="relative rounded-2xl overflow-hidden border border-white/10 aspect-video bg-black max-h-64">
                   <img
@@ -364,63 +372,36 @@ export default function AdminOrdersPage() {
                     rel="noopener noreferrer"
                     className="absolute top-3 left-3 px-3 py-1.5 rounded-lg bg-black/70 text-white text-xs font-bold flex items-center gap-1 hover:bg-black"
                   >
-                    <span>فتح الصورة بالحجم الكامل</span>
+                    <span>{text("فتح الصورة بالحجم الكامل", "Open full-size image")}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
               ) : (
                 <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-300">
-                  لم يتم رفع إيصال دفع حتى الآن.
+                  {text("لم يتم رفع إثبات دفع حتى الآن.", "No payment proof has been uploaded yet.")}
                 </div>
               )}
-            </div>
-
-            {/* Transaction Hash */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-gray-300">
-                  هاش المعاملة على البلوك تشين (TXID)
-                </label>
-                {selectedOrder.txHash && (
-                  <a
-                    href={getExplorerUrl(selectedOrder.network, selectedOrder.txHash) || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-amber-400 hover:underline inline-flex items-center gap-1 font-bold"
-                  >
-                    <span>فحص البلوك تشين</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-              </div>
-              <input
-                type="text"
-                value={txHashInput}
-                onChange={(e) => setTxHashInput(e.target.value)}
-                placeholder="أدخل هاش التحويل لتأكيد إرسال العملات..."
-                className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-amber-500"
-              />
             </div>
 
             {/* Admin Notes & Rejection Reason */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-gray-400 block mb-1">ملاحظة إدارية داخلية</label>
+                <label className="text-xs text-gray-400 block mb-1">{text("ملاحظة إدارية داخلية", "Internal admin note")}</label>
                 <input
                   type="text"
                   value={adminNote}
                   onChange={(e) => setAdminNote(e.target.value)}
-                  placeholder="ملاحظات المراجعة..."
+                  placeholder={text("ملاحظات المراجعة...", "Review notes...")}
                   className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-amber-500"
                 />
               </div>
               <div>
-                <label className="text-xs text-red-400 block mb-1">سبب الرفض (في حالة الرفض)</label>
+                <label className="text-xs text-red-400 block mb-1">{text("سبب الرفض", "Rejection reason")}</label>
                 <input
                   type="text"
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="إيصال غير واضح / عدم تطابق المبلغ..."
+                  placeholder={text("إيصال غير واضح / عدم تطابق المبلغ...", "Unclear proof / amount mismatch...")}
                   className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500"
                 />
               </div>
@@ -434,31 +415,15 @@ export default function AdminOrdersPage() {
                 onClick={() => handleAction("REJECT")}
                 className="px-4 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold border border-red-500/30 disabled:opacity-50"
               >
-                رفض الطلب
+                {text("رفض الطلب", "Reject order")}
               </button>
               <button
                 type="button"
-                disabled={modalActionLoading}
-                onClick={() => handleAction("VERIFY")}
-                className="px-4 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 text-xs font-bold border border-sky-500/30 disabled:opacity-50"
-              >
-                تحت الفحص المصرفي
-              </button>
-              <button
-                type="button"
-                disabled={modalActionLoading}
-                onClick={() => handleAction("APPROVE")}
-                className="px-4 py-2.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-xs font-bold border border-blue-500/30 disabled:opacity-50"
-              >
-                موافقة وبدء التحويل
-              </button>
-              <button
-                type="button"
-                disabled={modalActionLoading}
+                disabled={modalActionLoading || selectedOrder.status !== "UNDER_VERIFICATION"}
                 onClick={() => handleAction("COMPLETE")}
                 className="px-6 py-2.5 rounded-xl bg-emerald-500 text-black font-bold text-xs hover:brightness-110 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
               >
-                اكتمال الطلب بنجاح (Complete)
+                {text("إكمال الطلب", "Complete order")}
               </button>
             </div>
           </div>

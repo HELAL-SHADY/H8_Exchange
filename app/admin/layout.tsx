@@ -20,7 +20,9 @@ import {
   X,
   Coins,
   ChevronRight,
+  Globe,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 export default function AdminLayout({
   children,
@@ -31,6 +33,8 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { locale, setLocale } = useTranslation();
+  const text = (ar: string, en: string) => locale === "ar" ? ar : en;
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -54,14 +58,14 @@ export default function AdminLayout({
   const role = (session.user as any)?.role || "USER";
 
   const menuItems = [
-    { label: "لوحة القيادة والمؤشرات", href: "/admin", icon: BarChart3 },
-    { label: "كل الطلبات", href: "/admin/orders", icon: FileText },
-    { label: "طلبات بانتظار المراجعة", href: "/admin/orders?status=PENDING_REVIEW", icon: Clock },
-    { label: "المستخدمين والمحافظ", href: "/admin/users", icon: Users },
-    { label: "محرك أسعار الصرف", href: "/admin/settings?tab=rates", icon: Coins, adminOnly: true },
-    { label: "تذاكر الدعم الفني", href: "/admin/support", icon: LifeBuoy },
-    { label: "سجل العمليات والتدقيق", href: "/admin/audit-logs", icon: Shield },
-    { label: "إعدادات وبوابات الدفع", href: "/admin/settings", icon: Settings, adminOnly: true },
+    { label: text("لوحة القيادة والمؤشرات", "Dashboard"), href: "/admin", icon: BarChart3 },
+    { label: text("كل الطلبات", "All orders"), href: "/admin/orders", icon: FileText },
+    { label: text("طلبات الفحص المصرفي", "Bank verification"), href: "/admin/orders?status=UNDER_VERIFICATION", icon: Clock },
+    { label: text("المستخدمين والمحافظ", "Users and wallets"), href: "/admin/users", icon: Users },
+    { label: text("محرك أسعار الصرف", "Exchange rates"), href: "/admin/settings?tab=rates", icon: Coins, adminOnly: true },
+    { label: text("تذاكر الدعم الفني", "Support tickets"), href: "/admin/support", icon: LifeBuoy },
+    { label: text("سجل العمليات والتدقيق", "Audit log"), href: "/admin/audit-logs", icon: Shield },
+    { label: text("إعدادات وبوابات الدفع", "Payment settings"), href: "/admin/settings", icon: Settings, adminOnly: true },
   ];
 
   return (
@@ -82,6 +86,14 @@ export default function AdminLayout({
         <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">
           {role}
         </span>
+        <button
+          type="button"
+          onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+          className="p-2 rounded-lg text-gray-300 hover:bg-white/10"
+          aria-label={locale === "ar" ? "Switch to English" : "التبديل إلى العربية"}
+        >
+          <Globe className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Mobile Backdrop */}
@@ -105,9 +117,17 @@ export default function AdminLayout({
                 H8
               </div>
               <span className="font-extrabold text-white text-base tracking-wider">
-                لوحة الإدارة
+                {text("لوحة الإدارة", "Admin panel")}
               </span>
             </Link>
+            <button
+              type="button"
+              onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+              className="p-2 rounded-lg text-gray-300 hover:bg-white/10"
+              aria-label={locale === "ar" ? "Switch to English" : "التبديل إلى العربية"}
+            >
+              <Globe className="w-4 h-4" />
+            </button>
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden text-gray-400 hover:text-white"
@@ -158,14 +178,14 @@ export default function AdminLayout({
             href="/"
             className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs text-gray-400 hover:text-white hover:bg-white/5"
           >
-            <span>العودة للموقع الرئيسي</span>
+            <span>{text("العودة للموقع الرئيسي", "Back to site")}</span>
           </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/auth/login" })}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-medium text-red-400 hover:bg-red-500/10 transition-all"
           >
             <LogOut className="w-4 h-4" />
-            <span>تسجيل الخروج</span>
+            <span>{text("تسجيل الخروج", "Sign out")}</span>
           </button>
         </div>
       </aside>

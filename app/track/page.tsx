@@ -39,29 +39,29 @@ interface Order {
   paymentMethod?: string;
   receiveMethod?: string;
   proofImageUrl?: string;
-  txHash?: string;
   rejectionReason?: string;
 }
 
 const StatusSteps = {
   PENDING_PAYMENT: 0,
   PENDING_REVIEW: 1,
-  UNDER_VERIFICATION: 2,
-  APPROVED: 3,
+  UNDER_VERIFICATION: 1,
+  APPROVED: 1,
   REJECTED: 0,
-  COMPLETED: 4,
+  COMPLETED: 2,
 };
 
 const methodLabels: Record<string, string> = {
   VODAFONE_CASH: "Vodafone Cash",
   INSTAPAY: "InstaPay",
   BINANCE_PAY: "Binance Pay",
-  BYBIT_PAY: "Bybit Pay",
+  BEP20: "BSC (BEP20)",
 };
 
 export default function TrackPage() {
   const { data: session } = useSession();
   const { t, locale } = useTranslation();
+  const text = (ar: string, en: string) => locale === "ar" ? ar : en;
   const [orderId, setOrderId] = useState("");
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
@@ -130,7 +130,7 @@ export default function TrackPage() {
 
   const handleCancelOrder = async () => {
     if (!order) return;
-    if (!confirm("هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟")) return;
+    if (!confirm(text("هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟", "Are you sure you want to cancel this order?"))) return;
 
     setCancelling(true);
     try {
@@ -140,11 +140,11 @@ export default function TrackPage() {
         body: JSON.stringify({ action: "CANCEL" }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "فشل إلغاء الطلب");
-      alert("تم إلغاء الطلب بنجاح");
+      if (!res.ok) throw new Error(data.error || text("فشل إلغاء الطلب", "Failed to cancel order"));
+      alert(text("تم إلغاء الطلب بنجاح", "Order cancelled."));
       trackOrder(order.id);
     } catch (e: any) {
-      alert(e.message || "حدث خطأ أثناء الإلغاء");
+      alert(e.message || text("حدث خطأ أثناء الإلغاء", "Error cancelling the order"));
     } finally {
       setCancelling(false);
     }
@@ -171,12 +171,12 @@ export default function TrackPage() {
 
       const uploadData = await uploadResponse.json();
       if (!uploadResponse.ok) {
-        throw new Error(uploadData.error || "فشل تحميل صورة الإيصال");
+        throw new Error(uploadData.error || text("فشل تحميل صورة الإيصال", "Failed to upload payment proof"));
       }
 
       const proofImageUrl = uploadData.url;
 
-      // 2. Update order to PENDING_REVIEW
+      // Uploading proof advances the order to bank verification.
       const response = await fetch(`/api/orders/${order.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -188,14 +188,14 @@ export default function TrackPage() {
 
       const orderData = await response.json();
       if (!response.ok) {
-        throw new Error(orderData.error || "فشل تحديث حالة الطلب");
+        throw new Error(orderData.error || text("فشل تحديث حالة الطلب", "Failed to update order status"));
       }
 
-      alert("تم رفع الإيصال بنجاح وجاري مراجعته من الإدارة!");
+      alert(text("تم رفع الإيصال بنجاح وبدأ الفحص المصرفي.", "Proof uploaded. Bank verification has started."));
       setFile(null);
       trackOrder(order.id);
     } catch (err: any) {
-      alert(err.message || "حدث خطأ أثناء رفع إثبات الدفع");
+      alert(err.message || text("حدث خطأ أثناء رفع إثبات الدفع", "Error uploading payment proof"));
     } finally {
       setPaymentLoading(false);
     }
@@ -237,12 +237,12 @@ export default function TrackPage() {
 
   const StatusDisplay: Record<string, any> = {
     PENDING_PAYMENT: { label: t("status_PENDING_PAYMENT") || "بانتظار الدفع", icon: Wallet, color: "yellow" },
-    PENDING_REVIEW: { label: t("status_PENDING_REVIEW") || "بانتظار المراجعة", icon: Clock, color: "yellow" },
-    UNDER_VERIFICATION: { label: t("status_UNDER_VERIFICATION") || "تحت الفحص المصرفي", icon: Clock, color: "blue" },
-    APPROVED: { label: t("status_APPROVED") || "تمت الموافقة وجاري التحويل", icon: CheckCircle, color: "green" },
+    PENDING_REVIEW: { label: t("status_UNDER_VERIFICATION"), icon: Clock, color: "blue" },
+    UNDER_VERIFICATION: { label: t("status_UNDER_VERIFICATION"), icon: Clock, color: "blue" },
+    APPROVED: { label: t("status_UNDER_VERIFICATION"), icon: Clock, color: "blue" },
     REJECTED: { label: t("status_REJECTED") || "تم الرفض", icon: XCircle, color: "red" },
     COMPLETED: { label: t("status_COMPLETED") || "مكتمل بنجاح", icon: CheckCircle, color: "green" },
-    CANCELLED: { label: "ملغي", icon: XCircle, color: "red" },
+    CANCELLED: { label: text("ملغي", "Cancelled"), icon: XCircle, color: "red" },
   };
 
   // Determine transfer details based on payment method
@@ -251,7 +251,7 @@ export default function TrackPage() {
     if (order.type === "BUY") {
       if (order.paymentMethod === "VODAFONE_CASH") {
         return {
-          label: "رقم محفظة فودافون كاش الرسمية",
+          label: text("رقم محفظة فودافون كاش الرسمية", "Official Vodafone Cash number"),
           value: siteSettings.vodafoneCashNumber || "010XXXXXXXX",
           isLink: false,
         };
@@ -265,26 +265,18 @@ export default function TrackPage() {
           : `https://ipn.eg/S/${raw.replace(/@instapay/i, "")}/instapay`;
 
         return {
-          label: "رابط وحساب إنستا باي الرسمي (InstaPay)",
+          label: text("رابط إنستا باي الرسمي", "Official InstaPay link"),
           value: raw,
           url: fullUrl,
           isLink: true,
         };
       }
     } else {
-      if (order.paymentMethod === "BINANCE_PAY") {
-        return {
-          label: "معرف بينانس للإيداع (Binance UID)",
-          value: siteSettings.binanceUid,
-          isLink: false,
-        };
-      } else {
-        return {
-          label: "Bybit Pay ID",
-          value: siteSettings.bybitPayId,
-          isLink: false,
-        };
-      }
+      return {
+        label: text("عنوان إيداع USDT عبر شبكة BSC", "USDT deposit address on BSC"),
+        value: siteSettings.usdtBep20Address || "",
+        isLink: false,
+      };
     }
   };
 
@@ -357,12 +349,12 @@ export default function TrackPage() {
                         <Wallet className="text-amber-400 w-8 h-8 drop-shadow-[0_0_10px_rgba(245,185,66,0.5)]" />
                         <div>
                           <h2 className="text-2xl font-bold text-white">
-                            {t("payPendingTitle") || "بانتظار الدفع والتحويل"}
+                            {t("payPendingTitle")}
                           </h2>
                           <p className="text-gray-400 text-xs font-light">
-                            المطلوب تحويل:{" "}
+                            {text("المطلوب تحويل:", "Amount to transfer:")}{" "}
                             <span className="text-amber-400 font-bold font-mono text-sm">
-                              {order.egpAmount || order.amount} {order.type === "BUY" ? "ج.م" : "USDT"}
+                              {order.egpAmount || order.amount} {order.type === "BUY" ? "EGP" : "USDT"}
                             </span>
                           </p>
                         </div>
@@ -374,7 +366,7 @@ export default function TrackPage() {
                         disabled={cancelling}
                         className="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 transition-all disabled:opacity-50"
                       >
-                        {cancelling ? "جاري الإلغاء..." : "إلغاء الطلب"}
+                        {cancelling ? text("جاري الإلغاء...", "Cancelling...") : text("إلغاء الطلب", "Cancel order")}
                       </button>
                     </div>
 
@@ -385,7 +377,7 @@ export default function TrackPage() {
                           {transferDetails.label}
                         </span>
                         <span className="text-[11px] text-gray-400">
-                          {transferDetails.isLink ? "دفع مباشر عبر التطبيق" : "تحويل فودافون كاش"}
+                          {transferDetails.isLink ? text("دفع مباشر عبر التطبيق", "Pay directly in the app") : text("تحويل فودافون كاش", "Vodafone Cash transfer")}
                         </span>
                       </div>
 
@@ -400,7 +392,7 @@ export default function TrackPage() {
                             onClick={() => handleCopy(transferDetails.value)}
                             className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold"
                           >
-                            {copied ? "تم النسخ!" : "نسخ الرابط/الرقم"}
+                            {copied ? text("تم النسخ!", "Copied!") : text("نسخ الرابط/الرقم", "Copy link/number")}
                           </button>
 
                           {transferDetails.isLink && (
@@ -433,7 +425,7 @@ export default function TrackPage() {
                           className="w-full px-4 py-3 rounded-xl bg-white/[0.04] backdrop-blur-xl border border-white/10 text-white focus:outline-none focus:border-amber-500 transition-colors duration-300 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-amber-500 file:text-black file:font-semibold hover:file:opacity-90 cursor-pointer text-sm"
                         />
                         <p className="text-xs text-gray-400 mt-1 font-light">
-                          ارفع لقطة شاشة إيصال تحويل InstaPay أو رسالة فودافون كاش لتأكيد طلبك.
+                          {text("ارفع لقطة شاشة إيصال تحويل InstaPay أو Vodafone Cash لتأكيد طلبك.", "Upload a screenshot of your InstaPay or Vodafone Cash transfer.")}
                         </p>
                       </FormGroup>
 
@@ -442,7 +434,7 @@ export default function TrackPage() {
                         className="w-full py-3.5"
                         disabled={paymentLoading}
                       >
-                        {paymentLoading ? "جاري رفع الإيصال..." : "تأكيد إرسال إيصال الدفع"}
+                        {paymentLoading ? text("جاري رفع الإيصال...", "Uploading proof...") : text("تأكيد إرسال إيصال الدفع", "Submit payment proof")}
                       </PrimaryButton>
                     </form>
                   </CardContent>
@@ -454,13 +446,13 @@ export default function TrackPage() {
                 <CardContent className="py-6">
                   <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
                     <h2 className="text-2xl font-bold">{t("orderDetails")}</h2>
-                    {["PENDING_PAYMENT", "PENDING_REVIEW"].includes(order.status) && (
+                    {["PENDING_PAYMENT", "PENDING_REVIEW", "APPROVED"].includes(order.status) && (
                       <button
                         onClick={handleCancelOrder}
                         disabled={cancelling}
                         className="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 transition-all"
                       >
-                        {cancelling ? "جاري الإلغاء..." : "إلغاء هذا الطلب"}
+                        {cancelling ? text("جاري الإلغاء...", "Cancelling...") : text("إلغاء هذا الطلب", "Cancel order")}
                       </button>
                     )}
                   </div>
@@ -475,16 +467,16 @@ export default function TrackPage() {
                     <div>
                       <p className="text-gray-500 text-sm mb-1">{t("processType")}</p>
                       <p className="font-semibold text-lg text-amber-400">
-                        {order.type === "BUY" ? "شراء USDT" : "بيع USDT"}
+                        {order.type === "BUY" ? text("شراء USDT", "Buy USDT") : text("بيع USDT", "Sell USDT")}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500 text-sm mb-1">المبلغ المطلوب</p>
+                      <p className="text-gray-500 text-sm mb-1">{text("المبلغ المطلوب", "Amount")}</p>
                       <p className="font-semibold text-lg text-white font-mono">
                         {order.usdtAmount || order.amount} USDT
                         {order.egpAmount && (
                           <span className="text-xs text-emerald-400 block font-normal">
-                            ({order.egpAmount} ج.م)
+                            ({order.egpAmount} EGP)
                           </span>
                         )}
                       </p>
@@ -529,14 +521,14 @@ export default function TrackPage() {
 
                   {order.proofImageUrl && (
                     <div className="mt-6 pt-4 border-t border-white/5">
-                      <p className="text-xs text-gray-400 mb-2">إيصال الدفع المرفوع:</p>
+                      <p className="text-xs text-gray-400 mb-2">{text("إيصال الدفع المرفوع:", "Uploaded payment proof:")}</p>
                       <a
                         href={order.proofImageUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 text-xs text-amber-400 hover:underline font-bold"
                       >
-                        <span>عرض صورة الإيصال المرفوع</span>
+                        <span>{text("عرض صورة الإيصال المرفوع", "View uploaded proof")}</span>
                         <ExternalLink size={14} />
                       </a>
                     </div>
@@ -566,30 +558,20 @@ export default function TrackPage() {
                       {[
                         {
                           step: 1,
-                          title: t("status_PENDING_REVIEW"),
+                          title: t("status_PENDING_PAYMENT"),
                           date: order.createdAt,
-                          completed:
-                            StatusSteps[order.status as keyof typeof StatusSteps] >= 1,
+                          completed: true,
                         },
                         {
                           step: 2,
                           title: t("status_UNDER_VERIFICATION"),
-                          completed:
-                            StatusSteps[order.status as keyof typeof StatusSteps] >= 2,
+                          completed: StatusSteps[order.status as keyof typeof StatusSteps] >= 1,
                         },
                         {
                           step: 3,
-                          title: t("status_APPROVED"),
-                          date: order.approvedAt,
-                          completed:
-                            StatusSteps[order.status as keyof typeof StatusSteps] >= 3,
-                        },
-                        {
-                          step: 4,
                           title: t("status_COMPLETED"),
                           date: order.completedAt,
-                          completed:
-                            StatusSteps[order.status as keyof typeof StatusSteps] >= 4,
+                          completed: StatusSteps[order.status as keyof typeof StatusSteps] >= 2,
                         },
                       ].map((s) => (
                         <div key={s.step} className="flex items-center gap-4">

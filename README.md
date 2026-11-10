@@ -1,18 +1,20 @@
 # H8 Exchange - Crypto Trading Platform
 
-A professional, production-ready C2C crypto exchange platform for buying and selling USDT against EGP with manual admin approval workflow.
+A professional C2C crypto exchange platform for buying and selling USDT against EGP, with bank verification and completion workflows.
 
 ## 🚀 Features
 
 ### User Features
 - **Buy USDT**: Users can create orders to buy USDT by transferring EGP
 - **Sell USDT**: Users can create orders to sell USDT and receive EGP
+- **BSC-only wallet transfers**: USDT address transfers use BSC (BEP20); administrators configure and enable the deposit address
 - **Order Tracking**: Real-time order status tracking
+- **Order statuses**: After payment proof is uploaded, orders move to bank verification and then completion (or rejection)
 - **Reviews System**: Leave ratings and reviews after order completion
 - **Real-time Notifications**: Get notified about order updates
 
 ### Admin Features
-- **Order Management**: Review, approve, or reject pending orders
+- **Order Management**: Review payment proof, complete orders, or reject them
 - **Exchange Rate Management**: Update buy/sell rates and order limits
 - **Audit Logging**: Complete activity tracking and audit trail
 - **Dashboard**: Real-time statistics and analytics
@@ -22,7 +24,7 @@ A professional, production-ready C2C crypto exchange platform for buying and sel
 - 🔐 NextAuth authentication with JWT
 - 🎨 Modern dark theme with gold accents (Binance-inspired)
 - 📱 Fully responsive design (Desktop, Tablet, Mobile)
-- 🌍 Arabic RTL support by default
+- 🌍 Arabic/English language switch with RTL/LTR support
 - ✨ Smooth animations with Framer Motion
 - 🛡️ Secure password hashing with bcryptjs
 

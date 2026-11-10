@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PrimaryButton } from "@/components/ui/button";
 import { FormGroup, Label, Input } from "@/components/ui/form";
 import { motion } from "framer-motion";
+import { useTranslation } from "@/lib/i18n";
 
 interface ExchangeRates {
   buyRate: number;
@@ -17,7 +18,7 @@ interface SiteSettings {
   binanceUid: string;
   vodafoneCashNumber: string;
   instapayNumber: string;
-  bybitPayId: string;
+  usdtBep20Address: string;
   telegramUsername: string;
   supportEmail: string;
   announcement: string;
@@ -26,7 +27,7 @@ interface SiteSettings {
   instapayEnabled: boolean;
   vodafoneEnabled: boolean;
   binanceEnabled: boolean;
-  bybitEnabled: boolean;
+  bep20Enabled: boolean;
 }
 
 // ===== Toggle Switch Component =====
@@ -88,6 +89,8 @@ function ToggleSwitch({
 }
 
 export default function AdminSettingsPage() {
+  const { locale } = useTranslation();
+  const text = (ar: string, en: string) => locale === "ar" ? ar : en;
   const [rates, setRates] = useState<ExchangeRates | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,7 +107,7 @@ export default function AdminSettingsPage() {
     binanceUid: "",
     vodafoneCashNumber: "",
     instapayNumber: "",
-    bybitPayId: "",
+    usdtBep20Address: "",
     telegramUsername: "",
     supportEmail: "",
     announcement: "",
@@ -113,7 +116,7 @@ export default function AdminSettingsPage() {
     instapayEnabled: true,
     vodafoneEnabled: true,
     binanceEnabled: true,
-    bybitEnabled: true,
+    bep20Enabled: true,
   });
 
   useEffect(() => {
@@ -143,7 +146,7 @@ export default function AdminSettingsPage() {
           binanceUid: data.binanceUid || "",
           vodafoneCashNumber: data.vodafoneCashNumber || "",
           instapayNumber: data.instapayNumber || "",
-          bybitPayId: data.bybitPayId || "",
+          usdtBep20Address: data.usdtBep20Address || "",
           telegramUsername: data.telegramUsername || "",
           supportEmail: data.supportEmail || "",
           announcement: data.announcement || "",
@@ -152,7 +155,7 @@ export default function AdminSettingsPage() {
           instapayEnabled: data.instapayEnabled ?? true,
           vodafoneEnabled: data.vodafoneEnabled ?? true,
           binanceEnabled: data.binanceEnabled ?? true,
-          bybitEnabled: data.bybitEnabled ?? true,
+          bep20Enabled: data.bep20Enabled ?? true,
         });
       }
     } catch (error) {
@@ -172,12 +175,12 @@ export default function AdminSettingsPage() {
       if (response.ok) {
         const updated = await response.json();
         setRates(updated);
-        alert("✅ تم تحديث الأسعار بنجاح!");
+        alert(text("✅ تم تحديث الأسعار بنجاح!", "✅ Exchange rates updated."));
       } else {
-        alert("❌ فشل التحديث");
+        alert(text("❌ فشل التحديث", "❌ Update failed."));
       }
     } catch (error) {
-      alert("حدث خطأ: " + (error as Error).message);
+      alert(text("حدث خطأ: ", "Error: ") + (error as Error).message);
     } finally {
       setSaving(false);
     }
@@ -193,62 +196,62 @@ export default function AdminSettingsPage() {
         body: JSON.stringify(siteSettings),
       });
       if (response.ok) {
-        alert("✅ تم تحديث إعدادات الموقع بنجاح!");
+        alert(text("✅ تم تحديث إعدادات الموقع بنجاح!", "✅ Site settings updated."));
       } else {
         const err = await response.json();
-        alert("❌ فشل التحديث: " + (err.error || "خطأ غير معروف"));
+        alert(text("❌ فشل التحديث: ", "❌ Update failed: ") + (err.error || text("خطأ غير معروف", "Unknown error")));
       }
     } catch (error) {
-      alert("حدث خطأ: " + (error as Error).message);
+      alert(text("حدث خطأ: ", "Error: ") + (error as Error).message);
     } finally {
       setSavingSettings(false);
     }
   };
 
   if (loading) {
-    return <div className="text-center text-gray-400 py-10">جاري التحميل...</div>;
+    return <div className="text-center text-gray-400 py-10">{text("جاري التحميل...", "Loading...")}</div>;
   }
 
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-3xl sm:text-4xl font-bold">الإعدادات</h1>
-        <p className="text-gray-400 mt-2">إدارة أسعار الصرف وإعدادات الدفع</p>
+        <h1 className="text-3xl sm:text-4xl font-bold">{text("الإعدادات", "Settings")}</h1>
+        <p className="text-gray-400 mt-2">{text("إدارة أسعار الصرف وإعدادات الدفع", "Manage exchange rates and payment settings")}</p>
       </motion.div>
 
       {/* ===== Operations Control ===== */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <Card>
           <CardContent>
-            <h2 className="text-xl sm:text-2xl font-bold mb-1">🔧 التحكم في العمليات</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-1">🔧 {text("التحكم في العمليات", "Trading controls")}</h2>
             <p className="text-sm text-gray-400 mb-6">
-              تشغيل أو إيقاف عمليات الشراء والبيع — عند الإيقاف يظهر للمستخدم رسالة صيانة
+              {text("تشغيل أو إيقاف عمليات الشراء والبيع — عند الإيقاف يظهر للمستخدم رسالة صيانة", "Enable or pause buying and selling. Paused services show a maintenance notice.")}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <ToggleSwitch
                 enabled={siteSettings.buyEnabled}
                 onChange={(v) => setSiteSettings({ ...siteSettings, buyEnabled: v })}
-                label="عملية الشراء (Buy USDT)"
-                description="السماح للمستخدمين بشراء USDT مقابل EGP"
+                label={text("عملية الشراء (Buy USDT)", "Buy USDT")}
+                description={text("السماح للمستخدمين بشراء USDT مقابل EGP", "Allow users to buy USDT with EGP")}
                 enabledColor="bg-green-500"
-                enabledLabel="الشراء متاح"
-                disabledLabel="الشراء موقوف"
+                enabledLabel={text("الشراء متاح", "Buying enabled")}
+                disabledLabel={text("الشراء موقوف", "Buying paused")}
               />
               <ToggleSwitch
                 enabled={siteSettings.sellEnabled}
                 onChange={(v) => setSiteSettings({ ...siteSettings, sellEnabled: v })}
-                label="عملية البيع (Sell USDT)"
-                description="السماح للمستخدمين ببيع USDT مقابل EGP"
+                label={text("عملية البيع (Sell USDT)", "Sell USDT")}
+                description={text("السماح للمستخدمين ببيع USDT مقابل EGP", "Allow users to sell USDT for EGP")}
                 enabledColor="bg-green-500"
-                enabledLabel="البيع متاح"
-                disabledLabel="البيع موقوف"
+                enabledLabel={text("البيع متاح", "Selling enabled")}
+                disabledLabel={text("البيع موقوف", "Selling paused")}
               />
             </div>
 
-            <h2 className="text-xl font-bold mb-1">💳 التحكم في طرق الدفع والاستلام</h2>
+            <h2 className="text-xl font-bold mb-1">💳 {text("التحكم في طرق الدفع والاستلام", "Payment and payout methods")}</h2>
             <p className="text-sm text-gray-400 mb-4">
-              إيقاف طريقة دفع أو استلام بعينها — يظهر للمستخدم رسالة صيانة عند محاولة استخدامها
+              {text("إيقاف طريقة دفع أو استلام بعينها — يظهر للمستخدم رسالة صيانة عند محاولة استخدامها", "Enable or disable individual payment and payout methods.")}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -256,37 +259,37 @@ export default function AdminSettingsPage() {
                 enabled={siteSettings.instapayEnabled}
                 onChange={(v) => setSiteSettings({ ...siteSettings, instapayEnabled: v })}
                 label="InstaPay 💠"
-                description="الدفع / الاستلام عبر InstaPay"
+                description={text("الدفع / الاستلام عبر InstaPay", "Pay or receive through InstaPay")}
                 enabledColor="bg-blue-500"
-                enabledLabel="InstaPay متاح"
-                disabledLabel="InstaPay موقوف"
+                enabledLabel={text("InstaPay متاح", "InstaPay enabled")}
+                disabledLabel={text("InstaPay موقوف", "InstaPay paused")}
               />
               <ToggleSwitch
                 enabled={siteSettings.vodafoneEnabled}
                 onChange={(v) => setSiteSettings({ ...siteSettings, vodafoneEnabled: v })}
                 label="Vodafone Cash 📱"
-                description="الدفع / الاستلام عبر Vodafone Cash"
+                description={text("الدفع / الاستلام عبر Vodafone Cash", "Pay or receive through Vodafone Cash")}
                 enabledColor="bg-red-500"
-                enabledLabel="Vodafone متاح"
-                disabledLabel="Vodafone موقوف"
+                enabledLabel={text("Vodafone متاح", "Vodafone enabled")}
+                disabledLabel={text("Vodafone موقوف", "Vodafone paused")}
               />
               <ToggleSwitch
                 enabled={siteSettings.binanceEnabled}
                 onChange={(v) => setSiteSettings({ ...siteSettings, binanceEnabled: v })}
-                label="Binance UID / Pay 🔑"
-                description="الدفع / الاستلام عبر Binance"
+                label="Binance UID 🔑"
+                description={text("استلام USDT عبر Binance UID", "Receive USDT through Binance UID")}
                 enabledColor="bg-yellow-500"
-                enabledLabel="Binance متاح"
-                disabledLabel="Binance موقوف"
+                enabledLabel={text("Binance متاح", "Binance enabled")}
+                disabledLabel={text("Binance موقوف", "Binance paused")}
               />
               <ToggleSwitch
-                enabled={siteSettings.bybitEnabled}
-                onChange={(v) => setSiteSettings({ ...siteSettings, bybitEnabled: v })}
-                label="Bybit Pay ID 💠"
-                description="الدفع / الاستلام عبر Bybit"
-                enabledColor="bg-orange-500"
-                enabledLabel="Bybit متاح"
-                disabledLabel="Bybit موقوف"
+                enabled={siteSettings.bep20Enabled}
+                onChange={(v) => setSiteSettings({ ...siteSettings, bep20Enabled: v })}
+                label="USDT wallet (BSC / BEP20)"
+                description={text("إيداع وسحب USDT عبر شبكة BSC فقط", "USDT transfers on BSC only")}
+                enabledColor="bg-yellow-500"
+                enabledLabel={text("شبكة BSC متاحة", "BSC enabled")}
+                disabledLabel={text("شبكة BSC موقوفة", "BSC paused")}
               />
             </div>
 
@@ -296,16 +299,16 @@ export default function AdminSettingsPage() {
               !siteSettings.instapayEnabled ||
               !siteSettings.vodafoneEnabled ||
               !siteSettings.binanceEnabled ||
-              !siteSettings.bybitEnabled) && (
+              !siteSettings.bep20Enabled) && (
               <div className="mt-4 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
-                <p className="text-yellow-400 text-sm font-semibold mb-2">⚠️ تحذير — خدمات موقوفة حاليًا:</p>
+                <p className="text-yellow-400 text-sm font-semibold mb-2">⚠️ {text("تحذير — خدمات موقوفة حاليًا:", "Warning — services currently paused:")}</p>
                 <ul className="text-xs text-yellow-300 space-y-1">
-                  {!siteSettings.buyEnabled && <li>• عملية الشراء موقوفة — المستخدمون لا يستطيعون شراء USDT</li>}
-                  {!siteSettings.sellEnabled && <li>• عملية البيع موقوفة — المستخدمون لا يستطيعون بيع USDT</li>}
-                  {!siteSettings.instapayEnabled && <li>• InstaPay موقوف — متوقف للصيانة لدى المستخدمين</li>}
-                  {!siteSettings.vodafoneEnabled && <li>• Vodafone Cash موقوف — متوقف للصيانة لدى المستخدمين</li>}
-                  {!siteSettings.binanceEnabled && <li>• Binance Pay / UID موقوف — متوقف للصيانة لدى المستخدمين</li>}
-                  {!siteSettings.bybitEnabled && <li>• Bybit Pay موقوف — متوقف للصيانة لدى المستخدمين</li>}
+                  {!siteSettings.buyEnabled && <li>• {text("الشراء موقوف — لا يمكن للمستخدمين شراء USDT", "Buying is paused — users cannot buy USDT")}</li>}
+                  {!siteSettings.sellEnabled && <li>• {text("البيع موقوف — لا يمكن للمستخدمين بيع USDT", "Selling is paused — users cannot sell USDT")}</li>}
+                  {!siteSettings.instapayEnabled && <li>• {text("InstaPay متوقف للصيانة", "InstaPay is paused for maintenance")}</li>}
+                  {!siteSettings.vodafoneEnabled && <li>• {text("Vodafone Cash متوقف للصيانة", "Vodafone Cash is paused for maintenance")}</li>}
+                  {!siteSettings.binanceEnabled && <li>• {text("استلام Binance UID متوقف للصيانة", "Binance UID payouts are paused")}</li>}
+                  {!siteSettings.bep20Enabled && <li>• {text("شبكة BSC متوقفة للصيانة", "BSC transfers are paused")}</li>}
                 </ul>
               </div>
             )}
@@ -317,7 +320,7 @@ export default function AdminSettingsPage() {
                 className="w-full sm:w-auto"
                 disabled={savingSettings}
               >
-                {savingSettings ? "جاري الحفظ..." : "💾 حفظ إعدادات التشغيل"}
+                {savingSettings ? text("جاري الحفظ...", "Saving...") : `💾 ${text("حفظ إعدادات التشغيل", "Save service settings")}`}
               </PrimaryButton>
             </div>
           </CardContent>
@@ -328,18 +331,16 @@ export default function AdminSettingsPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
         <Card>
           <CardContent>
-            <h2 className="text-xl sm:text-2xl font-bold mb-1">إعدادات الدفع</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-1">{text("إعدادات الدفع", "Payment settings")}</h2>
             <p className="text-sm text-gray-400 mb-6">
-              طرق الدفع المتاحة للعملاء — تظهر في صفحات الشراء والبيع
+              {text("طرق الدفع المتاحة للعملاء — تظهر في صفحات الشراء والبيع", "Customer payment details shown on the buy and sell pages")}
             </p>
 
             <form onSubmit={handleSiteSettingsSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Vodafone Cash */}
                 <FormGroup>
-                  <Label htmlFor="vodafoneCashNumber">
-                    رقم Vodafone Cash 📱
-                  </Label>
+                  <Label htmlFor="vodafoneCashNumber">{text("رقم Vodafone Cash 📱", "Vodafone Cash number 📱")}</Label>
                   <Input
                     id="vodafoneCashNumber"
                     type="tel"
@@ -353,15 +354,13 @@ export default function AdminSettingsPage() {
                     }
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    يُعرض للعملاء في صفحة الشراء (شراء USDT مقابل EGP)
+                    {text("يُعرض للعملاء في صفحة الشراء (شراء USDT مقابل EGP)", "Shown to customers on the Buy USDT page")}
                   </p>
                 </FormGroup>
 
                 {/* InstaPay Link */}
                 <FormGroup>
-                  <Label htmlFor="instapayNumber">
-                    رابط دفع InstaPay المباشر 🔗
-                  </Label>
+                  <Label htmlFor="instapayNumber">{text("رابط دفع InstaPay المباشر 🔗", "InstaPay payment link 🔗")}</Label>
                   <Input
                     id="instapayNumber"
                     type="text"
@@ -374,9 +373,7 @@ export default function AdminSettingsPage() {
                       })
                     }
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    رابط الدفع المباشر عبر InstaPay — عند اختيار InstaPay يظهر زر &quot;دفع&quot; ليفتح هذا الرابط للعميل
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{text("رابط الدفع المباشر عبر InstaPay — يظهر للعميل عند اختيار طريقة الدفع.", "Direct InstaPay link shown to customers who choose this payment method.")}</p>
                 </FormGroup>
 
                 {/* Binance UID */}
@@ -396,31 +393,25 @@ export default function AdminSettingsPage() {
                       })
                     }
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    يُعرض للعملاء في صفحة البيع (بيع USDT مقابل EGP)
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{text("يُعرض للعملاء لاستلام USDT عبر Binance UID", "Shown to customers receiving USDT through Binance UID")}</p>
                 </FormGroup>
 
-                {/* Bybit Pay */}
+                {/* BSC deposit address */}
                 <FormGroup>
-                  <Label htmlFor="bybitPayId">
-                    Bybit Pay ID 💠
-                  </Label>
+                  <Label htmlFor="usdtBep20Address">{text("عنوان إيداع USDT على شبكة BSC (BEP20)", "USDT deposit address on BSC (BEP20)")}</Label>
                   <Input
-                    id="bybitPayId"
+                    id="usdtBep20Address"
                     type="text"
-                    placeholder="مثال: 123456789"
-                    value={siteSettings.bybitPayId}
+                    placeholder="0x..."
+                    value={siteSettings.usdtBep20Address}
                     onChange={(e) =>
                       setSiteSettings({
                         ...siteSettings,
-                        bybitPayId: e.target.value,
+                        usdtBep20Address: e.target.value,
                       })
                     }
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    يُعرض للعملاء كطريقة بديلة في صفحة البيع (USDT)
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{text("العنوان الذي سيحوّل إليه العملاء USDT عبر شبكة BSC فقط.", "The address customers use to send USDT over BSC only.")}</p>
                 </FormGroup>
               </div>
 
@@ -428,10 +419,10 @@ export default function AdminSettingsPage() {
               {(siteSettings.vodafoneCashNumber ||
                 siteSettings.binanceUid ||
                 siteSettings.instapayNumber ||
-                siteSettings.bybitPayId) && (
+              siteSettings.usdtBep20Address) && (
                 <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#F5B942]/20">
                   <p className="text-xs text-[#F5B942] font-semibold mb-3 uppercase tracking-wide">
-                    معاينة — ما سيراه العملاء
+                    {text("معاينة — ما سيراه العملاء", "Preview — customer view")}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     {siteSettings.vodafoneCashNumber && (
@@ -458,11 +449,11 @@ export default function AdminSettingsPage() {
                         </span>
                       </div>
                     )}
-                    {siteSettings.bybitPayId && (
+                    {siteSettings.usdtBep20Address && (
                       <div>
-                        <span className="text-gray-500">Bybit Pay ID:</span>
+                        <span className="text-gray-500">USDT BSC:</span>
                         <span className="text-white font-semibold mr-2">
-                          {siteSettings.bybitPayId}
+                          {siteSettings.usdtBep20Address}
                         </span>
                       </div>
                     )}
@@ -475,7 +466,7 @@ export default function AdminSettingsPage() {
                 className="w-full sm:w-auto"
                 disabled={savingSettings}
               >
-                {savingSettings ? "جاري الحفظ..." : "💾 حفظ إعدادات الدفع"}
+                {savingSettings ? text("جاري الحفظ...", "Saving...") : `💾 ${text("حفظ إعدادات الدفع", "Save payment settings")}`}
               </PrimaryButton>
             </form>
           </CardContent>
@@ -490,13 +481,13 @@ export default function AdminSettingsPage() {
       >
         <Card>
           <CardContent>
-            <h2 className="text-xl sm:text-2xl font-bold mb-6">أسعار الصرف</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-6">{text("أسعار الصرف", "Exchange rates")}</h2>
 
             <form onSubmit={handleRatesSubmit} className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {/* Buy Rate */}
                 <FormGroup>
-                  <Label htmlFor="buyRate">سعر الشراء (EGP/USDT)</Label>
+                  <Label htmlFor="buyRate">{text("سعر الشراء (EGP/USDT)", "Buy rate (EGP/USDT)")}</Label>
                   <Input
                     id="buyRate"
                     type="number"
@@ -510,13 +501,13 @@ export default function AdminSettingsPage() {
                     }
                   />
                   <p className="text-sm text-[#F5B942] mt-2">
-                    الحالي: {rates?.buyRate.toFixed(2)} EGP
+                    {text("الحالي:", "Current:")} {rates?.buyRate.toFixed(2)} EGP
                   </p>
                 </FormGroup>
 
                 {/* Sell Rate */}
                 <FormGroup>
-                  <Label htmlFor="sellRate">سعر البيع (EGP/USDT)</Label>
+                  <Label htmlFor="sellRate">{text("سعر البيع (EGP/USDT)", "Sell rate (EGP/USDT)")}</Label>
                   <Input
                     id="sellRate"
                     type="number"
@@ -530,13 +521,13 @@ export default function AdminSettingsPage() {
                     }
                   />
                   <p className="text-sm text-[#F5B942] mt-2">
-                    الحالي: {rates?.sellRate.toFixed(2)} EGP
+                    {text("الحالي:", "Current:")} {rates?.sellRate.toFixed(2)} EGP
                   </p>
                 </FormGroup>
 
                 {/* Min Order */}
                 <FormGroup>
-                  <Label htmlFor="minOrder">الحد الأدنى للطلب (USDT / $)</Label>
+                  <Label htmlFor="minOrder">{text("الحد الأدنى للطلب (USDT)", "Minimum order (USDT)")}</Label>
                   <Input
                     id="minOrder"
                     type="number"
@@ -552,7 +543,7 @@ export default function AdminSettingsPage() {
 
                 {/* Max Order */}
                 <FormGroup>
-                  <Label htmlFor="maxOrder">الحد الأقصى للطلب (USDT / $)</Label>
+                  <Label htmlFor="maxOrder">{text("الحد الأقصى للطلب (USDT)", "Maximum order (USDT)")}</Label>
                   <Input
                     id="maxOrder"
                     type="number"
@@ -572,7 +563,7 @@ export default function AdminSettingsPage() {
                 className="w-full sm:w-auto"
                 disabled={saving}
               >
-                {saving ? "جاري الحفظ..." : "💾 حفظ الأسعار"}
+                {saving ? text("جاري الحفظ...", "Saving...") : `💾 ${text("حفظ الأسعار", "Save rates")}`}
               </PrimaryButton>
             </form>
           </CardContent>
@@ -587,15 +578,15 @@ export default function AdminSettingsPage() {
       >
         <Card>
           <CardContent>
-            <h3 className="text-lg font-bold mb-4">معلومات هامة</h3>
+            <h3 className="text-lg font-bold mb-4">{text("معلومات هامة", "Important information")}</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li>• عند إيقاف الشراء أو البيع، يظهر للمستخدمين رسالة «جاري الصيانة وسيتاح قريبًا»</li>
-              <li>• عند إيقاف أي طريقة دفع (Vodafone Cash, InstaPay, Binance UID, Bybit Pay)، يتم إخفاء الخيار وعرض رسالة صيانة عند الضغط عليه</li>
-              <li>• عند تغيير رابط دفع InstaPay، يظهر زر «دفع» للعميل ويفتح الرابط المباشر فوراً</li>
-              <li>• عند تغيير Binance UID أو Bybit Pay ID، يظهر فوراً في صفحة البيع</li>
-              <li>• عند تحديث الأسعار، تُحدَّث تلقائياً في جميع الصفحات</li>
-              <li>• كل تغيير يُسجَّل في سجل العمليات</li>
-              <li>• تأكد من صحة بيانات الدفع قبل الحفظ لتجنب أخطاء التحويلات</li>
+              <li>• {text("عند إيقاف الشراء أو البيع، تظهر رسالة صيانة للمستخدمين.", "Paused buy/sell services show a maintenance notice.")}</li>
+              <li>• {text("إيقاف وسيلة دفع يمنع استخدامها في الطلبات الجديدة.", "Disabling a payment method prevents its use in new orders.")}</li>
+              <li>• {text("يظهر رابط InstaPay مباشرة للعملاء عند اختياره.", "The InstaPay link is shown directly when selected.")}</li>
+              <li>• {text("يتم استخدام عنوان USDT الذي أدخلته لشبكة BSC فقط.", "The configured USDT address is used for BSC only.")}</li>
+              <li>• {text("تُحدَّث الأسعار تلقائيًا في جميع الصفحات.", "Updated rates are reflected across the site.")}</li>
+              <li>• {text("تُسجَّل التغييرات في سجل العمليات.", "Changes are recorded in the audit log.")}</li>
+              <li>• {text("تحقق من بيانات الدفع قبل الحفظ لتجنب أخطاء التحويل.", "Verify payment details before saving to avoid transfer errors.")}</li>
             </ul>
           </CardContent>
         </Card>

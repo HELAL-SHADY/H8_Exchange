@@ -181,13 +181,13 @@ export default function ProfilePage() {
 
             <div>
               <label className="text-xs text-gray-400 font-medium block mb-1">
-                عنوان محفظة USDT (TRC20 / BEP20)
+                عنوان محفظة USDT على شبكة BSC (BEP20)
               </label>
               <input
                 type="text"
                 value={formData.walletNumber}
                 onChange={(e) => setFormData({ ...formData, walletNumber: e.target.value })}
-                placeholder="T..."
+                placeholder="0x..."
                 className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500 font-mono"
               />
             </div>

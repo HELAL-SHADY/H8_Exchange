@@ -51,9 +51,9 @@ model UserWallet {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  label     String   // e.g. "My Binance Pay", "InstaPay Principal", "USDT TRC20"
-  type      String   // VODAFONE_CASH, INSTAPAY, BINANCE_PAY, BYBIT_PAY, CRYPTO_WALLET
-  network   String?  // TRC20, BEP20, ERC20, etc.
+  label     String   // e.g. "My Binance Pay", "InstaPay Principal", "USDT BSC"
+  type      String   // VODAFONE_CASH, INSTAPAY, BINANCE_PAY, CRYPTO_WALLET
+  network   String?  // BEP20 (BSC)
   address   String   // Phone number, UID, or on-chain address
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -65,14 +65,14 @@ model UserWallet {
 
 model Order {
   id          String   @id @default(cuid())
-  orderNumber String?  @unique // Human readable unique reference: e.g. H8-BUY-98421
+  orderNumber String?  @unique // Human readable unique reference: e.g. H8-BUY-261109-XXXX
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Order details
   type   OrderType   @default(BUY)
   amount Float       // Primary requested amount
-  status OrderStatus @default(PENDING_REVIEW)
+  status OrderStatus @default(PENDING_PAYMENT)
 
   // Financial snapshot
   rateSnapshot  Float?   // Captured exchange rate at order creation
@@ -87,10 +87,10 @@ model Order {
   // Receive method
   receiveMethod String?
 
-  // Crypto network for direct deposits / withdrawals (e.g. TRC20, BEP20, ERC20)
+  // Crypto network: BSC (BEP20) only
   network       String?
 
-  // Blockchain Transaction Hash (For SELL orders or completed payouts)
+  // Legacy field retained for historical records; no longer accepted or exposed.
   txHash        String?
 
   // User information snapshot
@@ -305,7 +305,7 @@ model RateHistory {
 
 model PaymentMethodConfig {
   id          String   @id @default(cuid())
-  code        String   @unique // e.g. VODAFONE_CASH, INSTAPAY, BINANCE_PAY, BYBIT_PAY, USDT_TRC20
+  code        String   @unique // e.g. VODAFONE_CASH, INSTAPAY, BINANCE_PAY, BSC_WALLET
   nameEn      String
   nameAr      String
   description String?
@@ -330,11 +330,9 @@ model SiteSettings {
 
   // New payment methods
   instapayNumber String @default("")
-  bybitPayId     String @default("")
 
   // Crypto Deposit Addresses
-  usdtTrc20Address String? @default("")
-  usdtBep20Address String? @default("")
+  usdtBep20Address String? @default("") // BSC (BEP20) Wallet Address
 
   // Contact
   telegramUsername String? @default("")
@@ -352,8 +350,7 @@ model SiteSettings {
   instapayEnabled Boolean @default(true)
   vodafoneEnabled Boolean @default(true)
   binanceEnabled  Boolean @default(true)
-  bybitEnabled    Boolean @default(true)
-  cryptoEnabled   Boolean @default(true)
+  bep20Enabled    Boolean @default(true) // Toggle for BSC Wallet Address method
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -387,12 +384,12 @@ enum OrderType {
 
 enum OrderStatus {
   PENDING_PAYMENT
-  PENDING_REVIEW
   UNDER_VERIFICATION
-  APPROVED
-  REJECTED
   COMPLETED
+  REJECTED
   CANCELLED
+  PENDING_REVIEW
+  APPROVED
 }
 
 enum TicketCategory {

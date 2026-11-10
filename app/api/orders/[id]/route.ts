@@ -41,7 +41,22 @@ export async function GET(
       }
     }
 
-    return NextResponse.json(order);
+    const { txHash, ...visibleOrder } = order;
+    return NextResponse.json({
+      ...visibleOrder,
+      status: ["PENDING_REVIEW", "APPROVED"].includes(order.status)
+        ? "UNDER_VERIFICATION"
+        : order.status,
+      statusHistory: order.statusHistory.map((history) => ({
+        ...history,
+        fromStatus: ["PENDING_REVIEW", "APPROVED"].includes(history.fromStatus || "")
+          ? "UNDER_VERIFICATION"
+          : history.fromStatus,
+        toStatus: ["PENDING_REVIEW", "APPROVED"].includes(history.toStatus)
+          ? "UNDER_VERIFICATION"
+          : history.toStatus,
+      })),
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Failed to fetch order" },
@@ -58,6 +73,10 @@ export async function PATCH(
   try {
     const session = (await getServerSession(authOptions as any)) as any;
 
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const existingOrder = await prisma.order.findUnique({
       where: { id: params.id },
     });
@@ -66,15 +85,15 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    const isStaff = session?.user?.role && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
+    const isStaff = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
 
     // If caller is authenticated as another non-admin user, deny access
-    if (!isStaff && session?.user?.id && existingOrder.userId !== session.user.id) {
+    if (!isStaff && existingOrder.userId !== session.user.id) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
     const body = await request.json();
-    const { proofImageUrl, proofImageId, txHash, action } = body;
+    const { proofImageUrl, proofImageId, action } = body;
 
     // Handle user cancellation (Allowed for order owner, regardless of role)
     if (action === "CANCEL") {
@@ -101,11 +120,12 @@ export async function PATCH(
         });
         return ord;
       });
-      return NextResponse.json(updated);
+      const { txHash: omittedTxHash, ...visibleOrder } = updated;
+      return NextResponse.json(visibleOrder);
     }
 
-    // Handle user submitting payment proof or blockchain txHash
-    if (proofImageUrl || proofImageId || txHash) {
+    // Handle user submitting payment proof
+    if (proofImageUrl || proofImageId) {
       if (["COMPLETED", "REJECTED"].includes(existingOrder.status)) {
         return NextResponse.json(
           { error: "لا يمكن تعديل هذا الطلب نظراً لاكتماله أو رفضه" },
@@ -116,12 +136,10 @@ export async function PATCH(
       const updateData: any = {};
       if (proofImageUrl) updateData.proofImageUrl = proofImageUrl;
       if (proofImageId) updateData.proofImageId = proofImageId;
-      if (txHash) updateData.txHash = txHash;
 
-      // Transition to PENDING_REVIEW if previously PENDING_PAYMENT
-      const shouldAdvance = existingOrder.status === "PENDING_PAYMENT" && (proofImageUrl || txHash);
+      const shouldAdvance = ["PENDING_PAYMENT", "PENDING_REVIEW", "APPROVED"].includes(existingOrder.status);
       if (shouldAdvance) {
-        updateData.status = "PENDING_REVIEW";
+        updateData.status = "UNDER_VERIFICATION";
       }
 
       const updated = await prisma.$transaction(async (tx) => {
@@ -135,8 +153,8 @@ export async function PATCH(
             data: {
               orderId: params.id,
               fromStatus: existingOrder.status,
-              toStatus: "PENDING_REVIEW",
-              note: "Payment details / proof uploaded by user",
+              toStatus: "UNDER_VERIFICATION",
+              note: "Payment proof uploaded by user; bank verification started",
               changedBy: session?.user?.id || "USER",
             },
           });
@@ -153,7 +171,13 @@ export async function PATCH(
         console.warn("Telegram notify failed:", err);
       }
 
-      return NextResponse.json(updated);
+      const { txHash: omittedTxHash, ...visibleOrder } = updated;
+      return NextResponse.json({
+        ...visibleOrder,
+        status: ["PENDING_REVIEW", "APPROVED"].includes(updated.status)
+          ? "UNDER_VERIFICATION"
+          : updated.status,
+      });
     }
 
     // Any other arbitrary update without proof or cancel is rejected

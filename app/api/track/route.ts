@@ -34,14 +34,12 @@ export async function GET(request: NextRequest) {
         rateSnapshot: true,
         status: true,
         createdAt: true,
-        approvedAt: true,
         rejectedAt: true,
         completedAt: true,
         fullName: true,
         paymentMethod: true,
         receiveMethod: true,
         proofImageUrl: true,
-        txHash: true,
         rejectionReason: true,
         adminNote: true,
       },
@@ -54,7 +52,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json({
+      ...order,
+      status: ["PENDING_REVIEW", "APPROVED"].includes(order.status)
+        ? "UNDER_VERIFICATION"
+        : order.status,
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Failed to track order" },

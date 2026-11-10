@@ -21,7 +21,7 @@ interface Order {
   id: string;
   type: "BUY" | "SELL";
   amount: number;
-  status: "PENDING_REVIEW" | "UNDER_VERIFICATION" | "APPROVED" | "REJECTED" | "COMPLETED";
+  status: "PENDING_PAYMENT" | "PENDING_REVIEW" | "UNDER_VERIFICATION" | "APPROVED" | "REJECTED" | "COMPLETED";
   createdAt: string;
   approvedAt?: string;
   rejectedAt?: string;
@@ -41,6 +41,12 @@ export default function MyOrdersPage() {
     string,
     { label: string; icon: any; color: string; bg: string }
   > = {
+    PENDING_PAYMENT: {
+      label: t("status_PENDING_PAYMENT"),
+      icon: Clock,
+      color: "text-yellow-400",
+      bg: "bg-yellow-600/20",
+    },
     PENDING_REVIEW: {
       label: t("status_PENDING_REVIEW"),
       icon: Clock,
@@ -54,10 +60,10 @@ export default function MyOrdersPage() {
       bg: "bg-blue-600/20",
     },
     APPROVED: {
-      label: t("status_APPROVED"),
-      icon: CheckCircle,
-      color: "text-green-400",
-      bg: "bg-green-600/20",
+      label: t("status_UNDER_VERIFICATION"),
+      icon: AlertCircle,
+      color: "text-blue-400",
+      bg: "bg-blue-600/20",
     },
     REJECTED: {
       label: t("status_REJECTED"),
@@ -97,7 +103,7 @@ export default function MyOrdersPage() {
     try {
       const response = await fetch("/api/orders");
       const data = await response.json();
-      setOrders(Array.isArray(data) ? data : []);
+      setOrders(Array.isArray(data.orders) ? data.orders : []);
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -115,7 +121,7 @@ export default function MyOrdersPage() {
   const filteredOrders = orders.filter((order) => {
     if (activeTab === "ALL") return true;
     if (activeTab === "ONGOING")
-      return ["PENDING_REVIEW", "UNDER_VERIFICATION", "APPROVED"].includes(
+      return ["PENDING_PAYMENT", "PENDING_REVIEW", "UNDER_VERIFICATION", "APPROVED"].includes(
         order.status
       );
     if (activeTab === "COMPLETED") return order.status === "COMPLETED";
